@@ -245,5 +245,5 @@ def process_all(INPUT_ROOT, OUTPUT_ROOT, cx):
 if __name__ == "__main__":
     INPUT_ROOT = "."
     OUTPUT_ROOT = "translations"
-    SEARCH_CX = "d345925bd38534765"
+    SEARCH_CX = "xxx"
     process_all(INPUT_ROOT, OUTPUT_ROOT, SEARCH_CX)
