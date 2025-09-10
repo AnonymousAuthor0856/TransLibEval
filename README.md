@@ -64,7 +64,7 @@ We provide language-specific automated test harnesses for Python (unittest),  Ja
 
 
 
-**Dependencies**
+#### Dependencies
 
 Before running any tests, install the third-party libraries listed under `data/requirements/`:
 
@@ -128,6 +128,174 @@ data/dependencies/
 
 
 Each run produces a **JSON report** with the test results (the script prints the exact path). If model outputs contain superficial differences (formatting, minor strings) that cause spurious mismatches, use the regex-based normalization utilities under `normalization/` to post-process and align outputs with the test cases.
+
+
+
+### Prompts by Strategy
+
+#### Direct
+
+> Example:Translate the following {from_lang} code to {to_lang}.\n\n
+> Source Code:\n
+> {source_example}\n\n
+> Target Code:\n
+> {target_example}\n\n
+> Translate the following {from_lang} code to {to_lang}. Only return the translated code without any explanations or additional text.\n\n
+> Source Code:\n
+> {input_code.strip()}\n\n
+> Target Code:\n
+
+
+
+One-Shot  Example
+
+```python
+example_translations = {
+    "python": """
+        from faker import Faker
+
+        class NameGenerator:
+            def generate_name(self):
+                fake = Faker()
+                return fake.name()
+    """,
+    "java": """
+        import com.github.javafaker.Faker;
+
+        public class NameGenerator {
+            public String generateName() {
+                Faker faker = new Faker();
+                return faker.name().fullName();
+            }
+        }
+    """,
+    "cpp": """
+        #include <fakeit.hpp>
+        #include <string>
+
+        class NameGenerator {
+        public:
+            std::string generate_name() {
+                fakeit::FakeIt fake;
+                return fake.name();
+            }
+        };
+    """
+}
+```
+
+
+
+#### IR (Pseudocode)
+
+Stage A
+
+> Please analyze the following code and generate the corresponding pseudocode. The pseudocode should not reflect any specific language syntax or implementation details, and should focus solely on the core logic and steps of the algorithm. The pseudocode should be structured logically, describing the sequence of operations, decision-making processes, and function calls in a clear and understandable manner.
+>
+> Write only the pseudocode without any additional explanations or details.
+>
+> Class name: {class_name}. The Class name needs to appear
+>
+> Next, I will provide the source code; you must not directly mention the source code in your response:
+> {source_code}
+
+Stage B
+
+> Please generate the {language} code that implements the following functionality:
+>
+> {pseudocode}
+>
+> Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
+
+
+
+#### IR(summary)
+
+Stage A
+
+> Please analyze the following code and generate a summary of its functionality. 
+> The summary should not focus on specific language syntax, but should explain the key steps, 
+> purpose of the code, and overall logic of the program or class in a concise manner.
+>
+> Class name: {class_name}. The class name should be included in the summary.
+>
+> Next, I will provide the source code; you must not directly mention the source code in your response:
+> {source_code}
+
+Stage B
+
+> Please generate the {language} code that implements the following functionality:
+>
+> {summary}
+>
+> Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
+
+
+
+#### IR(CoT)
+
+Stage A
+
+> Please read the following source code for the class '{class_name}' and provide a step-by-step chain of thought that describes the logical flow and algorithmic steps. 
+>
+> Focus on the conceptual process rather than language-specific syntax. 
+> Do not quote the exact source code.
+>
+> Class name: {class_name}. The Class name needs to appear
+>
+> Here is the code，which provides only a step-by-step chain of thought:
+> {source_code}
+
+Stage B
+
+> Please generate the {language} code that implements the following functionality:
+>
+> {summary}
+>
+> Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
+
+
+
+#### RA(name)
+
+> You are a world‑class expert in code generation with deep mastery of translating 
+> algorithmic {from_lang} class methods into {target} implementations.\n\n
+> Below are the precise function signature details and either community‑sourced reference 
+> implementations or the original C++ code as fallback. Your task is to generate clean, 
+> idiomatic, and fully functional {target} code that exactly matches the behavior.\n\n
+> === Function Signature & Metadata ===\n
+> {sig_json}\n\n
+> === Reference Implementation ===\n
+> {ref_impl}\n\n
+> Produce only the final {target} code. Do not include any explanations, comments, or extra text.
+> \n\nBegin {target} code now:\n
+
+
+
+#### RA(method)
+
+Question generation
+
+> Analyze the following code snippet written in {src}, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into {tgt}. The question should:\n
+>         1. Be a simple sentence.\n
+>                 2. Avoid including the original code snippet directly.\n
+>                 3. Clearly describe the key functionality or purpose of the code that needs to be translated.\n
+>                         4. Be enclosed in triple single quotes (''').\n\n
+>                         Code snippet:\n`{src}\n{code}\n`
+
+Code generation
+
+>  ---- No related issues: direct translation ----
+>
+> Using the following StackOverflow answers as reference, 
+>         translate this {src} code into {tgt}:\n\n
+>
+> ---- Related issues ----
+>
+> Using the following StackOverflow answers as reference, 
+>         translate this {src} code into {tgt}:\n\n
+
+
 
 
 
