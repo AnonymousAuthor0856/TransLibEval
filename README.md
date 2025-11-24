@@ -12,6 +12,75 @@ Each task’s test suite contains exactly five test cases—normal input, edge i
 
 
 
+## Getting Started
+
+1. **Clone the repository** and set up the environment.
+2. **Data Preparation**: Ensure the TransLibEval dataset is available and ready for LLM invocation.
+3. **Running Experiments**: Use the **Execute strategy code generation** flow described in **Open-Source Code** (Direct, RA(method), IR variants, RA(name)), then run the **automated test suites** as outlined in **Test Suites** (Python/Java/C++). We also provide a manually executed version, placed in the "manual" folder.
+
+
+
+## One-Click Deployment (Automated setup)
+
+This repository includes a lightweight CLI that can perform common setup and run tasks in an automated fashion. The "one-click" flow below is designed for a macOS development machine with zsh. It will: create a Python virtual environment, install Python dependencies, verify configuration, and optionally run generation and test suites.
+
+Prerequisites
+
+- Git
+- Python 3.9 or newer
+- pip
+- A system package manager for platform-specific C++ dependencies (e.g., Homebrew on macOS)
+- JDK (for Java runs)
+
+Quick one-command deployment (recommended for new users):
+
+1. Clone the repo and enter the project directory.
+
+```bash
+git clone https://github.com/your-org/TransLibEval.git
+cd TransLibEval
+```
+
+1. Copy environment template and fill required API keys.
+
+```bash
+cp .env.example .env
+# Edit .env and add keys (OPENAI_API_KEY, QWEN_API_KEY, DEEPSEEK_KEY, etc.)
+```
+
+1. Create and activate a Python virtual environment, then install Python dependencies.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # macOS/Linux (zsh)
+pip install --upgrade pip
+pip install -r data/dependencies/requirements.txt
+```
+
+1. (Optional) Install platform C++ dependencies via Homebrew or your preferred package manager. Check `data/dependencies/cpp_third_party.txt` for details. Java dependencies also need to be manually installed
+
+```bash
+# Example (macOS):
+brew install some-cpp-lib another-lib
+```
+
+1. Quick configuration check and run generator/test pipelines using the included CLI.
+
+```bash
+python scripts/translib_cli.py env            # show env/config status; use --show-values to print values
+python scripts/translib_cli.py generate --strategies direct --dry-run  # dry run generation
+python scripts/translib_cli.py generate --strategies direct  # run generation
+python scripts/translib_cli.py test          # run the end-to-end test pipeline (build -> copy -> run tests)
+```
+
+Notes & tips
+
+- Use `--dry-run` first to validate what will be executed.
+- If you have limited API quota, run `generate` with `--stop-on-error` and small batches.
+- For CI, export required env vars and run the same commands in your pipeline.
+
+
+
 ## Open-Source Code
 
 To make third-party-library–aware code translation comparable across different LLMs, this repo ships lightweight invocation scripts per provider. Each script unifies a common CLI and prompt template for translation, so results are reproducible across models.
@@ -339,16 +408,139 @@ For the precise taxonomy and operational definitions of error types, see **`fail
 
 
 
-## Getting Started
-
-1. **Clone the repository** and set up the environment.
-2. **Data Preparation**: Ensure the TransLibEval dataset is available and ready for LLM invocation.
-3. **Running Experiments**: Use the **Execute strategy code generation** flow described in **Open-Source Code** (Direct, RA(method), IR variants, RA(name)), then run the **automated test suites** as outlined in **Test Suites** (Python/Java/C++).
-
-
-
 ## Requirements
 
 + **Python** 3.9 +
 + **C++** CMake ≥ 3.15, a C++20 compiler, and the following deps (recommended via **vcpkg**)
 + **Java** JDK 23
+
+## Library Versions & Dependencies
+
+TransLibEval supports 50+ third-party libraries across three languages. Full dependency lists are located in `data/dependencies/`.
+
+### Python Dependencies (45 libraries)
+
+| Library | Version |
+|---------|---------|
+| numpy | 2.3.5 |
+| pandas | 2.3.3 |
+| scikit-learn | 1.7.2 |
+| matplotlib | 3.10.0 |
+| seaborn | 0.13.2 |
+| bokeh | 3.6.3 |
+| nltk | 3.9.2 |
+| requests | 2.32.5 |
+| beautifulsoup4 | 4.12.3 |
+| marshmallow | 3.22.0 |
+| jsonschema | 4.24.0 |
+| networkx | 3.4.2 |
+| pydantic | 2.10.3 |
+| spacy | 3.8.2 |
+| gensim | 4.3.3 |
+| catboost | 1.2.8 |
+| lightgbm | 4.4.1 |
+| Polars | 1.12.0 |
+| dask | 2024.12.0 |
+| joblib | 1.4.2 |
+| tqdm | 4.67.1 |
+| tenacity | 8.7.0 |
+| more-itertools | 10.6.0 |
+| funcy | 2.0 |
+| boltons | 24.1.1 |
+| sortedcontainers | 2.4.0 |
+| shapely | 2.0.6 |
+| statsmodels | 0.14.2 |
+| patsy | 0.5.6 |
+| autopep8 | 2.3.1 |
+| Cerberus | 1.3.5 |
+| Schema | 0.7.7 |
+| Schematics | 1.1.3 |
+| Whoosh | 2.7.4 |
+| algorithms | 1.0.5 |
+| bitarray | 3.0.0 |
+| cvxpy | 1.5.3 |
+| levenshtein | 0.25.1 |
+| missingno | 0.5.2 |
+| mlxtend | 0.24.2 |
+| peewee | 3.21.4 |
+| pycrypto | 2.6.1 |
+| pyphonetics | 1.0.5 |
+| pyfftw | 0.14.1 |
+| shutilwhich | 1.1.1 |
+
+See `data/dependencies/requirements.txt` for complete list.
+
+### Java Dependencies (43 artifacts)
+
+| Artifact ID | Version |
+|-------------|---------|
+| com.fasterxml.jackson.core:jackson-databind | 2.20.1 |
+| com.fasterxml.jackson.core:jackson-core | 2.20.1 |
+| com.google.guava:guava | 33.5.0-jre |
+| org.jsoup:jsoup | 1.21.2 |
+| org.apache.commons:commons-csv | 1.11.0 |
+| org.apache.commons:commons-lang3 | 3.15.0 |
+| org.apache.commons:commons-collections4 | 4.4 |
+| org.apache.commons:commons-math3 | 3.6.1 |
+| org.apache.commons:commons-text | 1.12.0 |
+| edu.stanford.nlp:stanford-corenlp | 4.5.7 |
+| org.jfree:jfreechart | 1.5.4 |
+| org.deeplearning4j:deeplearning4j-core | 1.0.0-M2.1 |
+| org.nd4j:nd4j-native-platform | 1.0.0-M2.1 |
+| nz.ac.waikato.cms.weka:weka-stable | 3.8.6 |
+| io.reactivex.rxjava3:rxjava | 3.1.10 |
+| org.apache.httpcomponents:httpclient | 4.5.14 |
+| org.json:json | 20241210 |
+| com.github.haifengl:smile-core | 3.1.1 |
+| com.opencsv:opencsv | 5.10 |
+| com.squareup.okhttp3:okhttp | 4.12.0 |
+| commons-cli:commons-cli | 1.8.0 |
+| commons-codec:commons-codec | 1.17.1 |
+| commons-io:commons-io | 2.16.1 |
+| com.networknt:json-schema-validator | 1.5.1 |
+| dev.failsafe:failsafe | 3.3.2 |
+| jakarta.validation:jakarta.validation-api | 3.0.2 |
+| joda-time:joda-time | 2.13.0 |
+| me.tongfei:progressbar | 0.10.1 |
+| org.apache.lucene:lucene-core | 9.11.1 |
+| org.apache.opennlp:opennlp-tools | 2.4.0 |
+| org.bouncycastle:bcprov-jdk18on | 1.78.1 |
+| org.everit.json:org.everit.json.schema | 1.14.4 |
+| org.jdbi:jdbi3-core | 3.46.1 |
+| org.jgrapht:jgrapht-core | 1.5.2 |
+| org.knowm:xchart | 3.8.9 |
+| org.locationtech.jts:jts-core | 1.18.2 |
+| org.ojalgo:ojalgo | 53.2.0 |
+| org.springframework:spring-context | 6.1.14 |
+| org.sql2o:sql2o | 1.6.0 |
+| org.tartarus:snowball | 2.2.0 |
+| tech.tablesaw:tablesaw-core | 0.43.1 |
+| io.projectreactor:reactor-core | 2023.12.1 |
+
+See `data/dependencies/java_third_party.txt` for complete list.
+
+### C++ Dependencies (19 libraries)
+
+| Library | Version |
+|---------|---------|
+| boost | 1.85.0 |
+| Eigen | 3.4.0 |
+| nlohmann-json | 3.11.3 |
+| rapidjson | 1.1.0 |
+| libcurl | 8.10.1 |
+| libxml2 | 2.13.5 |
+| sqlite3 | 3.47.0 |
+| fmt | 11.0.2 |
+| indicators | 2.3 |
+| xtensor | 0.25.0 |
+| xgboost | 2.1.1 |
+| CLI | 2.4.2 |
+| cryptopp | 8.10.0 |
+| date | 3.0.1 |
+| fasttext | 0.9.2 |
+| llvm | 18.1.8 |
+| plplot | 5.15.0 |
+| range | 3.12.0 |
+| clang | 18.1.8 |
+
+See `data/dependencies/cpp_third_party.txt` for complete list.
