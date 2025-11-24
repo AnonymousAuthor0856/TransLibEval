@@ -6,6 +6,17 @@ import requests
 from bs4 import BeautifulSoup
 import logging
 import time
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+
+from translib.providers import ensure_non_empty, get_google_api_keys, get_google_cse_id
 
 # 强制 stdout/stderr 使用 UTF‑8 编码，避免打印 Unicode 时出现 Latin‑1 错误
 if hasattr(sys.stdout, "reconfigure"):
@@ -25,9 +36,10 @@ logging.basicConfig(
 logger = logging.getLogger()
 
 # —— Google CSE API key 列表与轮询逻辑 —— #
-API_KEYS = [
-    "xxx"
-]
+API_KEYS = ensure_non_empty(
+    get_google_api_keys(),
+    what="Google Custom Search API Keys (GOOGLE_CSE_API_KEYS)",
+)
 api_index = 0
 def get_next_api_key():
     global api_index
@@ -36,7 +48,7 @@ def get_next_api_key():
     return key
 
 # Google Programmable Search Engine ID
-SEARCH_ENGINE_ID = "xxx"
+SEARCH_ENGINE_ID = get_google_cse_id()
 
 def search_stackoverflow_question(query, pagesize=5, max_retries=3):
     """

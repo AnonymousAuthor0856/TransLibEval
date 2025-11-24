@@ -1,3 +1,14 @@
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+
 import os
 import re
 import qianfan
@@ -5,8 +16,6 @@ import logging
 
 # 设置安全认证 AK/SK 鉴权，通过环境变量方式初始化
 # 请替换 "your_iam_ak" 和 "your_iam_sk" 为您的实际 A cess Key 和 Secret Key
-os.environ["XXXX"] = "xxxx"
-os.environ["XXXX"] = "xxxx"
 
 # 初始化日志记录器
 logging.basicConfig(

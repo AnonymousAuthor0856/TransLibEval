@@ -1,3 +1,14 @@
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+
 import os
 import json
 import requests
@@ -10,8 +21,6 @@ import qianfan  # 导入 qianfan 库
 import os
 
 # 设置安全认证 AK/SK 鉴权，通过环境变量方式初始化
-os.environ["XXXX"] = "xxxx"
-os.environ["XXXX"] = "xxxx"
 
 # 设置日志记录器
 logging.basicConfig(
@@ -61,8 +70,7 @@ def generate_code_with_meta_llama(summary, language, retries=5):
     }, ensure_ascii=False)
 
     headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer xxxx'  # 使用正确的 Qianfan API 密钥
+        'Content-Type': 'application/json'  # 使用正确的 Qianfan API 密钥
     }
 
     for attempt in range(retries):

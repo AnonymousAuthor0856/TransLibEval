@@ -1,4 +1,23 @@
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+from translib.providers import get_deepseek_headers
+
+
+
 import os
+
+# --- 认证信息（环境变量） ---
+os.environ["QIANFAN_ACCESS_KEY"] = os.environ.get("QIANFAN_ACCESS_KEY", "")
+os.environ["QIANFAN_SECRET_KEY"] = os.environ.get("QIANFAN_SECRET_KEY", "")
+
 import json
 import logging
 import requests
@@ -7,8 +26,6 @@ from pathlib import Path
 import re
 
 # --- 认证信息（环境变量） ---
-os.environ["XXXX"] = "xxxx"
-os.environ["XXXX"] = "xxxx"
 
 # --- 日志设置 ---
 logging.basicConfig(
@@ -46,10 +63,7 @@ def translate_code(prompt: str, retries: int = 3) -> str | None:
         "disable_search": False,
         "enable_citation": False
     }
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer xxxx'
-    }
+    headers = get_deepseek_headers()
     for attempt in range(1, retries + 1):
         try:
             resp = requests.post(url, headers=headers, json=payload, timeout=60)

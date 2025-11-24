@@ -1,10 +1,33 @@
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+
 import os
+
+# --- 认证信息（环境变量） ---
+os.environ["QIANFAN_ACCESS_KEY"] = os.environ.get("QIANFAN_ACCESS_KEY", "")
+os.environ["QIANFAN_SECRET_KEY"] = os.environ.get("QIANFAN_SECRET_KEY", "")
+
 import re
 import time
 import json
 import logging
 import requests
 from bs4 import BeautifulSoup
+
+from translib.providers import (
+    ensure_non_empty,
+    get_deepseek_headers,
+    get_google_api_keys,
+    get_google_cse_id,
+)
 
 # -------- 日志配置 --------
 logging.basicConfig(
@@ -22,14 +45,8 @@ def log_print(msg):
 
 # -------- DeepSeek 配置 --------
 MODEL_NAME = "deepseek-v3"
-
-# （按需替换，以下示例与官方 Demo 一致）
-# 建议把密钥写进环境变量再读取；这里为演示直接硬编码
 DEEPSEEK_URL = "https://qianfan.baidubce.com/v2/chat/completions"
-DEEPSEEK_HEADERS = {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer xxxx"
-}
+DEEPSEEK_HEADERS = get_deepseek_headers()
 
 def deepseek_chat(messages, temperature: float = 0.01, top_p: float = 0.95,
                   retries: int = 3) -> str:
@@ -61,7 +78,10 @@ def deepseek_chat(messages, temperature: float = 0.01, top_p: float = 0.95,
     raise RuntimeError("DeepSeek 请求多次失败")
 
 # -------- Google API Key 轮换列表 & 获取函数 --------
-API_KEYS = ["xxxx"]
+API_KEYS = ensure_non_empty(
+    get_google_api_keys(),
+    what="Google Custom Search API Keys (GOOGLE_CSE_API_KEYS)",
+)
 api_idx = 0
 def get_next_api_key():
     global api_idx
@@ -232,5 +252,5 @@ def process_all(INPUT_ROOT, OUTPUT_ROOT, cx):
 if __name__ == "__main__":
     INPUT_ROOT  = "."               # 当前目录下有 cpp/, python/, java/
     OUTPUT_ROOT = "translations"    # 最终输出到 translations/<MODEL_NAME>/...
-    SEARCH_CX   = "xxx"
+    SEARCH_CX = get_google_cse_id()
     process_all(INPUT_ROOT, OUTPUT_ROOT, SEARCH_CX)

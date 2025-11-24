@@ -122,6 +122,10 @@ def run_tests_in_collected_files(collected_folder, output_json):
                 # 确保 stdout 和 stderr 解码为字符串，即使为空
                 stdout = e.stdout or ""
                 stderr = e.stderr or ""
+                if isinstance(stdout, bytes):
+                    stdout = stdout.decode("utf-8", errors="ignore")
+                if isinstance(stderr, bytes):
+                    stderr = stderr.decode("utf-8", errors="ignore")
                 combined_output = stdout + stderr  # 合并输出
 
                 # 如果 combined_output 仍然为空，提示可能是其他原因导致无输出

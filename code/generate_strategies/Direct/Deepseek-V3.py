@@ -1,4 +1,23 @@
+
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+from translib.providers import get_deepseek_headers
+
+
 import os
+
+# --- 认证信息（环境变量） ---
+os.environ["QIANFAN_ACCESS_KEY"] = os.environ.get("QIANFAN_ACCESS_KEY", "")
+os.environ["QIANFAN_SECRET_KEY"] = os.environ.get("QIANFAN_SECRET_KEY", "")
+
 import re
 import logging
 import json
@@ -6,8 +25,6 @@ import requests  # 更新为请求 API 的方式
 
 # 设置安全认证 AK/SK 鉴权，通过环境变量方式初始化
 # 请替换 "your_iam_ak" 和 "your_iam_sk" 为您的实际 Access Key 和 Secret Key
-os.environ["XXXX"] = "xxxx"
-os.environ["XXXX"] = "xxxx"
 
 # 初始化日志记录器
 logging.basicConfig(
@@ -122,11 +139,7 @@ def translate_code(input_code, from_lang, to_lang):
         "enable_citation": False
     }, ensure_ascii=False)
 
-    headers = {
-        'Content-Type': 'application/json',
-        'appid': '',  # 填入正确的 appid
-        'Authorization': 'Bearer xxxx'
-    }
+    headers = get_deepseek_headers()
 
     # 尝试进行翻译
     try:
@@ -206,4 +219,3 @@ for lang, folder in input_folders.items():
             logger.debug(f"Translation for {id} ({translation_type}) saved to {output_file_path}.")
 
 logger.info("All files have been processed and translations saved.")
-

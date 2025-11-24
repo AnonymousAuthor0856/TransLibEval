@@ -1,11 +1,22 @@
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+
 import os
 import re
 import logging
 import time
-from openai import OpenAI
+from translib.providers import build_openai_client
 
 # 设置 API 密钥和基础 URL
-client = OpenAI(api_key="xxxx", base_url = 'xxxx')
+client = build_openai_client(script_path=__file__)
 
 # 设置日志记录
 logging.basicConfig(

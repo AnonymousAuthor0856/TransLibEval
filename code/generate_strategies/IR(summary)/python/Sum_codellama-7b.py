@@ -1,3 +1,14 @@
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+
 import os
 import json
 import logging
@@ -6,8 +17,6 @@ import re
 import qianfan  # 引入 qianfan
 
 # 设置安全认证 AK/SK 鉴权，通过环境变量方式初始化
-os.environ["XXXX"] = "xxxx"
-os.environ["XXXX"] = "xxxx"
 
 # 设置日志记录器
 logging.basicConfig(

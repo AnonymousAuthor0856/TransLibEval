@@ -1,10 +1,23 @@
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+from translib.providers import build_openai_client, ensure_non_empty, get_google_api_keys, get_google_cse_id
+
+
 import os
 import re
 import time
 import logging
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
+from translib.providers import build_openai_client
 
 # --- 日志配置 ---
 logging.basicConfig(
@@ -22,10 +35,13 @@ def log_print(msg):
 
 # --- OpenAI 客户端 （请用环境变量配置）---
 MODEL_NAME = "qwen-max-2025-01-25"
-client = OpenAI(api_key="xxxx", base_url = 'xxxx')
+client = build_openai_client(script_path=__file__)
 
 # --- Google API Key 轮换列表 & 获取函数 ---
-API_KEYS = ["xxxx"]
+API_KEYS = ensure_non_empty(
+    get_google_api_keys(),
+    what="Google Custom Search API Keys (GOOGLE_CSE_API_KEYS)",
+)
 api_idx = 0
 def get_next_api_key():
     global api_idx
@@ -209,5 +225,5 @@ def process_all(INPUT_ROOT, OUTPUT_ROOT, cx):
 if __name__ == "__main__":
     INPUT_ROOT  = "."               # 当前目录下有 cpp/, python/, java/
     OUTPUT_ROOT = "translations"    # 最终输出到 translations/<MODEL_NAME>/...
-    SEARCH_CX   = "xxx"
+    SEARCH_CX = get_google_cse_id()
     process_all(INPUT_ROOT, OUTPUT_ROOT, SEARCH_CX)

@@ -1,3 +1,16 @@
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+from translib.providers import ensure_non_empty, get_google_api_keys, get_google_cse_id
+
+
 import os
 import re
 import time
@@ -26,12 +39,13 @@ def log_print(msg):
 
 # ------------------ 模型配置 ------------------
 MODEL_NAME = "Meta-Llama-3-70B"
-os.environ["XXXX"] = "xxxx"
-os.environ["XXXX"] = "xxxx"
 comp = qianfan.Completion()
 
 # --------------- Google API Key 轮换列表 ---------------
-API_KEYS = ["xxxx"]
+API_KEYS = ensure_non_empty(
+    get_google_api_keys(),
+    what="Google Custom Search API Keys (GOOGLE_CSE_API_KEYS)",
+)
 api_idx = 0
 def get_next_api_key():
     global api_idx
@@ -245,5 +259,5 @@ def process_all(INPUT_ROOT, OUTPUT_ROOT, cx):
 if __name__ == "__main__":
     INPUT_ROOT = "."
     OUTPUT_ROOT = "translations"
-    SEARCH_CX = "xxx"
+    SEARCH_CX = get_google_cse_id()
     process_all(INPUT_ROOT, OUTPUT_ROOT, SEARCH_CX)

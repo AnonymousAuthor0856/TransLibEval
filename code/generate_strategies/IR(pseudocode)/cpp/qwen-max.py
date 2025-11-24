@@ -1,9 +1,20 @@
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+
 import os
 import json
 import logging
 import time
 import re
-from openai import OpenAI  # 使用 OpenAI 客户端库
+from translib.providers import build_openai_client  # 使用 OpenAI 客户端库
 
 # 设置日志记录器
 logging.basicConfig(
@@ -39,7 +50,7 @@ Please ensure the code is complete and correctly follows the syntax and conventi
 """
 
 # 初始化 OpenAI 客户端
-client = OpenAI(api_key="xxxx", base_url = 'xxxx')
+client = build_openai_client(script_path=__file__)
 
 
 # 调用 qwen_max API 进行代码生成

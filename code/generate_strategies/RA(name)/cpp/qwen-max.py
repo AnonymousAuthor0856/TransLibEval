@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
+from pathlib import Path
+
+_TRANSLIB_ROOT = Path(__file__).resolve()
+for _parent in _TRANSLIB_ROOT.parents:
+    if (_parent / "README.md").exists():
+        if str(_parent) not in sys.path:
+            sys.path.insert(0, str(_parent))
+        break
+del _parent, _TRANSLIB_ROOT
+
 """
 根据 signature_out 中的函数签名以及 StackOverflow 参考答案 JSON，
 直接生成对应的 Python/Java 代码（专业版 prompt），
@@ -13,10 +24,10 @@ import logging
 import time
 import re
 from pathlib import Path
-from openai import OpenAI
+from translib.providers import build_openai_client
 
 # --- OpenAI 客户端配置 ---
-client = OpenAI(api_key="xxxx", base_url = 'xxxx')
+client = build_openai_client(script_path=__file__)
 
 
 # --- 日志设置 ---
