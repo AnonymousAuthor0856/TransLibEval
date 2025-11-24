@@ -418,7 +418,7 @@ For the precise taxonomy and operational definitions of error types, see **`fail
 
 TransLibEval supports 50+ third-party libraries across three languages. Full dependency lists are located in `data/dependencies/`.
 
-### Python Dependencies (45 libraries)
+### Python Dependencies
 
 | Library | Version |
 |---------|---------|
@@ -470,7 +470,7 @@ TransLibEval supports 50+ third-party libraries across three languages. Full dep
 
 See `data/dependencies/requirements.txt` for complete list.
 
-### Java Dependencies (43 artifacts)
+### Java Dependencies
 
 | Artifact ID | Version |
 |-------------|---------|
@@ -519,7 +519,7 @@ See `data/dependencies/requirements.txt` for complete list.
 
 See `data/dependencies/java_third_party.txt` for complete list.
 
-### C++ Dependencies (19 libraries)
+### C++ Dependencies
 
 | Library | Version |
 |---------|---------|
