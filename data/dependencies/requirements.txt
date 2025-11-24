@@ -6,7 +6,6 @@ Schema
 Schematics
 Whoosh
 algorithms
-asyncio
 autopep8
 bitarray
 bokeh
@@ -14,16 +13,12 @@ boltons
 catboost
 cvxpy
 dask
-collection
-datetime
-Pydecimal
-functoolsplus
 funcy
 gensim
 more-itertools
 joblib
 jsonschema
-levenshtein
+python-Levenshtein
 lightgbm
 marshmallow>=3,<4
 matplotlib
@@ -35,7 +30,7 @@ numpy
 pandas
 patsy
 peewee
-pycrypto
+pycryptodome
 pyfftw
 pyphonetics
 requests
