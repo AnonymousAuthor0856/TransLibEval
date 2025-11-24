@@ -69,9 +69,30 @@ brew install some-cpp-lib another-lib
 ```bash
 python scripts/translib_cli.py env            # show env/config status; use --show-values to print values
 python scripts/translib_cli.py generate --strategies direct --dry-run  # dry run generation
-python scripts/translib_cli.py generate --strategies direct  # run generation
-python scripts/translib_cli.py test          # run the end-to-end test pipeline (build -> copy -> run tests)
+python scripts/translib_cli.py generate --strategies direct            # run generation
+python scripts/translib_cli.py test cpp2py data/python/src             # isolated cpp→python tests
+python scripts/translib_cli.py test java2py path/to/py_funcs
+python scripts/translib_cli.py test py2cpp data/cpp/src                # copy function_*.cpp -> C++ suite/src & run
+python scripts/translib_cli.py test java2cpp path/to/cpp_funcs
 ```
+
+### TransLib CLI Details
+
+1. `python scripts/translib_cli.py env [--show-values]`  
+   Reports readiness of required env vars (OpenAI/Qwen/Qianfan/Deepseek/Google CSE). Use `--show-values` only when it is safe to print secrets.
+
+2. `python scripts/translib_cli.py generate [--strategies ...] [--dry-run] [--stop-on-error]`  
+   Runs the high-level generation scripts:
+   - `--strategies`: any subset of `direct`, `ra-method`, `ra-name`, `ir-pseudocode`, `ir-summary`, `ir-cot`.  
+   - IR strategies run `Sum_*` scripts before the base scripts. RA(name) runs `signature.py`, then `Serch/Search.py`, then all model drivers per language.  
+   - `--dry-run` lists scripts without executing; `--stop-on-error` aborts on the first failure.
+
+3. `python scripts/translib_cli.py test <pipeline> <source_dir>`  
+   Builds an isolated copy of the test suites, injects your generated files, and executes the existing harness:
+   - `<pipeline>` ∈ {`cpp2py`, `java2py`, `py2cpp`, `java2cpp`}.  
+   - `cpp2py/java2py`: expect `source_dir` to contain `function_*.py`, copy them into `cpp_to_python` or `java_to_python`, then run `run_* → copypy_* → automate_test_*`.  
+   - `py2cpp/java2cpp`: expect `function_*.cpp`, replace `FunctionBuildTest/src`, then run `build_script.sh → select_tests.py → automate_test.py`.  
+   - Each run happens in a temp directory (original suites remain untouched). Result JSON files—or `FAILED.txt` when the harness stops early—are archived under `test_results/<timestamp>_<pipeline>/`.
 
 Notes & tips
 
@@ -159,7 +180,7 @@ data/dependencies/
 
 **Python**
 
-+ Place the code to be tested under `code/test_suites/python/` as a **packaged folder** named `<source_lang>_<target_lang>` (e.g., `python_java`, `python_cpp`). Then run the following in order:
++ Place the code to be tested under `code/test_suites/python/` as a **packaged folder** named `<source_lang>_to_<target_lang>` (e.g., `java_to_python`, `cpp_to_python`). Then run the following in order:
   1. **Compile & build:** `run_<source_lang>.py`
   2. **Bundle passing artifacts:** `copypy_<source_lang>.py`
   3. **Execute unit tests sequentially:** `automate_test_<source_lang>.py`
