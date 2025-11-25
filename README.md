@@ -2,6 +2,7 @@
 
 TransLibEval is the first library-centric code translation benchmark presented in the paper " TransLibEval:  A Library-Centric Benchmark for Code Translation Across Python,  Java, and C++. "  Feel free to contact us for further information or to submit new results.
 
+For a step-by-step example that traces a single Python task through every translation strategy, build, test, and evaluation stage, see [`workflow_example.md`](./workflow_example.md).
 
 
 ## Dataset
