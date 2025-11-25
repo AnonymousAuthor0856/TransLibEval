@@ -8,7 +8,7 @@ TransLibEval is the first library-centric code translation benchmark presented i
 
 TransLibEval, a TPL-focused, multi-PL code translation benchmark with 200 method-level tasks built from a Python calibration across 50 widely used libraries (data processing, ML, web, visualization, NLP, utilities, etc.). Each Python task defines exactly one top-level class with a single instance method that calls a third-party API; method signatures use primitive types only. For every task, we provide parallel Java and C++ counterparts plus equivalent unit tests (Python unittest, Java JUnit via Maven, C++ GoogleTest via NuGet).
 
-Each task’s test suite contains exactly five test cases—normal input, edge input, exception handling, type validation, and resource-constraint—executed across all three languages. Code is comment-free, PEP 8 compliant, and Java/C++ follow official style and library selection rules.
+Each task’s test suite contains five test cases—normal input, edge input, exception handling, type validation, and resource-constraint—executed across all three languages. Code is comment-free, PEP 8 compliant, and Java/C++ follow official style and library selection rules.
 
 
 
