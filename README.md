@@ -12,6 +12,40 @@ Each task’s test suite contains exactly five test cases—normal input, edge i
 
 
 
+### Parallel triplet illustration
+
+![Parallel triplet example](images/example.png)
+
+The figure above (`images/example.png`) visualizes one minimal unit inside the parallel corpus: `function_request_get` shown in Python, C++, and Java. Each block contains distilled pseudo-code plus the corresponding third-party HTTP stack (`requests`, `libcurl`, `OkHttp + Jackson`). This snapshot demonstrates how every task in TransLibEval keeps the same control flow, timeout handling, JSON validation, and return semantics across the three languages, forming aligned triplets for training or evaluation.
+
+
+
+### Example test coverage
+
+`example: test_pyfftw_interfaces_numpy_fft_ifft` illustrates the five-bucket template end to end. The file wires up an `IFFTProcessor`, probes diverse Fourier inputs, and verifies shape/exception semantics.
+
+```cpp
+class TestIFFTFunction(unittest.TestCase):
+    setUp(): self.processor = IFFTProcessor()
+    test_ifft_simple_input(): assert "(4,)" for a mixed complex vector
+    test_ifft_zero_input():    assert "(4,)" for an all-zero tensor
+    test_ifft_invalid_input_real():   expect ValueError for purely real array
+    test_ifft_invalid_input_string(): expect ValueError for string array
+    test_ifft_large_input():   assert "(1000,)" for a 1k-length complex vector
+```
+
+| Test name                         | Scenario / input                                           | Taxonomy bucket        |
+|----------------------------------|-------------------------------------------------------------|------------------------|
+| `test_ifft_simple_input`         | Regular complex array succeeds                             | Nominal semantics      |
+| `test_ifft_zero_input`           | Zero-filled array exercises a boundary case                | Boundary adherence     |
+| `test_ifft_invalid_input_real`   | Real-only array violates Fourier contract                  | Exception semantics    |
+| `test_ifft_invalid_input_string` | String array triggers explicit dtype validation            | Type conformance       |
+| `test_ifft_large_input`          | 1000-length random vector stresses FFT resource handling   | Resource resilience    |
+
+The corresponding Java and C++ suites mirror the same five situations, guaranteeing that the multilingual corpus enforces identical behavioral granularity.
+
+
+
 ## Getting Started
 
 1. **Clone the repository** and set up the environment.
