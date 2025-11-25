@@ -4,15 +4,15 @@ This section presents a single task, `function_requests_fetch_average_temperatur
 
 ---
 
-## 1. Task Preparation
+## Task Preparation
 
-### 1.1 Task overview
+### Task overview
 
 The source program is written in Python and the target language in this run is Java. The task models a small library-like function that depends on a Python HTTP client library and is expected to be translated into an equivalent Java implementation that uses appropriate HTTP and JSON handling facilities.
 
 The core method under evaluation is `fetch_average_temperature(city: str, days: int) -> float`. Conceptually, this method queries a weather API endpoint with a city name and a number of days, retrieves a JSON payload containing a sequence of temperature observations in Celsius, computes the arithmetic mean over all observations, rounds the result to two decimal places, and returns the rounded value as a `float`. On the Python side, HTTP and JSON are handled uniformly via the `requests` library; there is no explicit dependency on additional numeric or data-frame libraries.
 
-### 1.2 Source code with TPL usage
+### Source code with TPL usage
 
 The benchmark stores the source implementation as the canonical Python reference for this task:
 
@@ -37,7 +37,7 @@ In subsequent stages, this method is treated as the unit of translation. The met
 
 In the released dataset, every task adheres to the canonical naming pattern `function_<library>_<api>.{py,java,cpp}`. Accordingly, this example lives in `function_requests_fetch_average_temperature.py` and defines the matching class `FunctionRequestsFetchAverageTemperature`, with parallel target-language stubs such as `function_requests_fetch_average_temperature.java`.
 
-### 1.3 Library mapping and contract
+### Library mapping and contract
 
 For each TransLibEval task, the benchmark designer specifies an intended mapping between source-side and target-side libraries. This mapping is used for ground-truth implementations and for human LDA assessment; it is not directly included in the model input.
 
@@ -47,7 +47,7 @@ For each TransLibEval task, the benchmark designer specifies an intended mapping
 
 On the Python side, the mean and rounding logic rely solely on the standard library (`sum`, `len`, `round`). On the Java side, the expected behavior is reproduced using standard APIs such as `DoubleStream` for aggregation and `BigDecimal` for decimal rounding.
 
-### 1.4 Workflow checklist
+### Workflow checklist
 
 For this task, the end-to-end run produces the following classes of artifacts:
 
@@ -61,11 +61,11 @@ For this task, the end-to-end run produces the following classes of artifacts:
 
 ------
 
-## 2. Translation Strategies and Intermediate Artifacts
+## Translation Strategies and Intermediate Artifacts
 
 For each of the six strategies, TransLibEval records what information is given to the model, what intermediate artifacts are produced, and where the final Java method is written. The prompts themselves are not reproduced here; instead, we describe the content that conditions the model at each step. Target-side Java code is referenced by filename and structural properties rather than shown in full.
 
-### 2.1 Direct translation (Direct)
+### Direct translation (Direct)
 
 In the Direct strategy, the model is conditioned on the Python method and a brief task description. No explicit intermediate representation is requested. The model directly outputs a Java implementation of an instance method `fetchAverageTemperature(String city, int days)` belonging to a `FunctionRequestsFetchAverageTemperature` class.
 
@@ -97,7 +97,7 @@ Target Code:
 
 The three IR strategies share a common two-phase template: (1) build an intermediate description that abstracts the Python specifics, persist it under `artifacts/ir_*`, and (2) prompt the model to translate the method again while quoting that IR verbatim. The differences lie in what the IR looks like (reasoning, pseudocode, or prose), but the downstream handling—feeding both the original code and the intermediate file into the generator and saving results under `gen_java/task_0142/ir_*/function_requests_fetch_average_temperature.java`—remains consistent.
 
-### 2.2 IR(CoT): chain-of-thought style IR
+### IR(CoT): chain-of-thought style IR
 
 IR(CoT) explicitly captures every functional checkpoint before emitting code. The pipeline unfolds as:
 
@@ -148,7 +148,7 @@ Please generate the {language} code that implements the following functionality:
 Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
-### 2.3 IR(pseudocode): pseudocode IR
+### IR(pseudocode): pseudocode IR
 
 IR(Pseudocode) follows the same two-phase pattern, except the IR is structured pseudo-code:
 
@@ -196,7 +196,7 @@ Please generate the {language} code that implements the following functionality:
 Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
-### 2.4 IR(summary): functional summary IR
+### IR(summary): functional summary IR
 
 IR(Summary) condenses the behavior into a concise narrative instead of enumerated steps:
 
@@ -238,7 +238,7 @@ Please generate the {language} code that implements the following functionality:
 Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
-### 2.5 RA(method): retrieval-augmented with method-level StackOverflow answers
+### RA(method): retrieval-augmented with method-level StackOverflow answers
 
 The RA(Method) pipeline mirrors the procedure described in the paper: rather than retrieving arbitrary code blobs, it gathers StackOverflow answers that are relevant to the full method body. Each task goes through the following steps:
 
@@ -307,7 +307,7 @@ Translate the following {src} code into {tgt}:
 {code}
 ```
 
-### 2.6 RA(name): retrieval-augmented with signature-driven name search
+### RA(name): retrieval-augmented with signature-driven name search
 
 RA(Name) follows a two-stage process whose implementation exactly matches the scripts in `code/generate_strategies/RA(name)/`:
 
@@ -374,9 +374,9 @@ Produce only the final {target} code. Do not include any explanations, comments,
 Begin {target} code now:
 ```
 
-### 3. Build and Test Suites
+### Build and Test Suites
 
-### 3.1 Build and execution command
+### Build and execution command
 
 For each strategy, TransLibEval injects the generated `function_requests_fetch_average_temperature.java` into a Maven module and runs a shared test suite. The build command used in this example run is:
 
@@ -400,7 +400,7 @@ Separate logs are stored per strategy, for example:
 - `logs/task_0142/direct/compile.log` and `logs/task_0142/direct/test.log`
 - `logs/task_0142/ir_cot/compile.log` and `logs/task_0142/ir_cot/test.log`, and so on.
 
-### 3.2 Test suite design
+### Test suite design
 
 The test suite for this task consists of five JUnit test cases, each corresponding to a behavioral category that is shared across tasks in the benchmark. The tests exercise nominal, boundary, error, and robustness conditions.
 
@@ -416,7 +416,7 @@ For each strategy, the test runner records the number of tests executed, the num
 
 ------
 
-## 4. Automatic Metrics (CSR, PR, CA)
+## Automatic Metrics (CSR, PR, CA)
 
 TransLibEval computes three automatic metrics per task and per strategy:
 
@@ -439,15 +439,15 @@ These values are derived directly from the build and test logs. For example, for
 
 ------
 
-## 5. Human Evaluation: Library Dependency Awareness (LDA)
+## Human Evaluation: Library Dependency Awareness (LDA)
 
-### 5.1 Evaluation procedure
+### Evaluation procedure
 
 Beyond automatic metrics, TransLibEval includes a human evaluation phase that focuses on library dependency awareness. For each `(task, strategy)` pair, annotators inspect the generated Java implementation (and any helper classes it invokes) and verify whether the intended target-side TPL responsibilities are actually realized.
 
 The inspection proceeds as follows. Annotators first consult the library mapping for the task to identify which target-side libraries should be responsible for HTTP communication, JSON parsing, and any other TPL-related functionality. They then open the generated `function_requests_fetch_average_temperature.java` (and referenced helper classes, such as `WeatherGateway` or `RoundingUtils`) and locate the relevant constructor calls, method invocations, and imports. Finally, they assign a binary label `LDA = 1` if the necessary TPLs are correctly employed for their intended roles, or `LDA = 0` if the implementation either omits these libraries or misuses them in a way that breaks the logical mapping.
 
-### 5.2 Example inspection record
+### Example inspection record
 
 For `task_0142` and strategy IR(CoT), the annotator’s evidence record has the following structure:
 
