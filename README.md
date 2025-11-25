@@ -14,9 +14,9 @@ Each task’s test suite contains exactly five test cases—normal input, edge i
 
 ### Parallel triplet illustration
 
-![Parallel triplet example](images/example.png)
+![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/example.png)
 
-The figure above (`images/example.png`) visualizes one minimal unit inside the parallel corpus: `function_request_get` shown in Python, C++, and Java. Each block contains distilled pseudo-code plus the corresponding third-party HTTP stack (`requests`, `libcurl`, `OkHttp + Jackson`). This snapshot demonstrates how every task in TransLibEval keeps the same control flow, timeout handling, JSON validation, and return semantics across the three languages, forming aligned triplets for training or evaluation.
+The figure above visualizes one minimal unit inside the parallel corpus: `function_request_get` shown in Python, C++, and Java. Each block contains distilled pseudo-code plus the corresponding third-party HTTP stack (`requests`, `libcurl`, `OkHttp + Jackson`). This snapshot demonstrates how every task in TransLibEval keeps the same control flow, timeout handling, JSON validation, and return semantics across the three languages, forming aligned triplets for training or evaluation.
 
 
 
