@@ -1,6 +1,6 @@
 # TransLibEval End-to-End Workflow Example
 
-This section presents a single task, `WeatherReporter.fetch_average_temperature`, as a representative end-to-end run of TransLibEval. The example follows the complete pipeline from source code and third-party library (TPL) usage on the Python side, through six translation strategies (Direct, three IR-based, and two retrieval-augmented), to Java target code, build and test execution, automatic metrics (CSR / PR / CA), and human evaluation of Library Dependency Awareness (LDA). Target-side implementations are referred to but not reproduced in full; the focus is on the observable artifacts in each stage.
+This section presents a single task, `function_requests_fetch_average_temperature.fetch_average_temperature`, as a representative end-to-end run of TransLibEval. The example follows the complete pipeline from source code and third-party library (TPL) usage on the Python side, through six translation strategies (Direct, three IR-based, and two retrieval-augmented), to Java target code, build and test execution, automatic metrics (CSR / PR / CA), and human evaluation of Library Dependency Awareness (LDA). Target-side implementations are referred to but not reproduced in full; the focus is on the observable artifacts in each stage.
 
 ---
 
@@ -19,7 +19,7 @@ The benchmark stores the source implementation as the canonical Python reference
 ```python
 import requests
 
-class WeatherReporter:
+class FunctionRequestsFetchAverageTemperature:
     BASE_URL = "https://api.fakeweather.dev/v1/temperature"
 
     def fetch_average_temperature(self, city: str, days: int) -> float:
@@ -34,6 +34,8 @@ class WeatherReporter:
 ```
 
 In subsequent stages, this method is treated as the unit of translation. The method body is part of the model input, together with task metadata.
+
+In the released dataset, every task adheres to the canonical naming pattern `function_<library>_<api>.{py,java,cpp}`. Accordingly, this example lives in `function_requests_fetch_average_temperature.py` and defines the matching class `FunctionRequestsFetchAverageTemperature`, with parallel target-language stubs such as `function_requests_fetch_average_temperature.java`.
 
 ### 1.3 Library mapping and contract
 
@@ -65,7 +67,7 @@ For each of the six strategies, TransLibEval records what information is given t
 
 ### 2.1 Direct translation (Direct)
 
-In the Direct strategy, the model is conditioned on the Python method and a brief task description. No explicit intermediate representation is requested. The model directly outputs a Java implementation of an instance method `fetchAverageTemperature(String city, int days)` belonging to a `WeatherReporter` class.
+In the Direct strategy, the model is conditioned on the Python method and a brief task description. No explicit intermediate representation is requested. The model directly outputs a Java implementation of an instance method `fetchAverageTemperature(String city, int days)` belonging to a `FunctionRequestsFetchAverageTemperature` class.
 
 **Prompt template (per README – Prompts by Strategy).**
 
@@ -93,7 +95,7 @@ Target Code:
 
 
 
-The three IR strategies share a common two-phase template: (1) build an intermediate description that abstracts the Python specifics, persist it under `artifacts/ir_*`, and (2) prompt the model to translate the method again while quoting that IR verbatim. The differences lie in what the IR looks like (reasoning, pseudocode, or prose), but the downstream handling—feeding both the original code and the intermediate file into the generator and saving results under `gen_java/task_0142/ir_*/WeatherReporter.java`—remains consistent.
+The three IR strategies share a common two-phase template: (1) build an intermediate description that abstracts the Python specifics, persist it under `artifacts/ir_*`, and (2) prompt the model to translate the method again while quoting that IR verbatim. The differences lie in what the IR looks like (reasoning, pseudocode, or prose), but the downstream handling—feeding both the original code and the intermediate file into the generator and saving results under `gen_java/task_0142/ir_*/function_requests_fetch_average_temperature.java`—remains consistent.
 
 ### 2.2 IR(CoT): chain-of-thought style IR
 
@@ -114,13 +116,16 @@ artifacts/ir_cot/task_0142/steps.txt
 
 2. **IR-conditioned translation.** The translator receives the Python method plus `steps.txt`. Because the IR already commits to using HTTP requests, JSON parsing, averaging, and rounding, the downstream Java code mirrors those operations tightly.
 
-The final Java artifact for this strategy lives under `gen_java/task_0142/ir_cot/WeatherReporter.java`, accompanied by logs that cite the IR file that guided the generation.
+The final Java artifact for this strategy lives under `gen_java/task_0142/ir_cot/function_requests_fetch_average_temperature.java`, accompanied by logs that cite the IR file that guided the generation.
 
 **Prompt template.**
 
+*Stage A (IR extraction)*
+
 ```text
-Stage A — System: You are a code analysis assistant that provides structured summaries.
-Stage A — User:
+System: You are a code analysis assistant that provides structured summaries.
+
+User:
 Please read the following source code for the class '{class_name}' and provide a step-by-step chain of thought that describes the logical flow and algorithmic steps.
 
 Focus on the conceptual process rather than language-specific syntax.
@@ -130,8 +135,12 @@ Class name: {class_name}. The class name needs to appear.
 
 Here is the code; provide only a step-by-step chain of thought:
 {source_code}
+```
 
-Stage B — User:
+*Stage B (translation)*
+
+```text
+User:
 Please generate the {language} code that implements the following functionality:
 
 {chain_of_thought}
@@ -156,13 +165,16 @@ function fetch_average_temperature(city, days):
     return round(mean_value, 2)
 ```
 
-During phase two, the translation model references this pseudo-code line by line and emits Java code that adheres to the same branch/loop layout. The generated method is stored in `gen_java/task_0142/ir_pseudocode/WeatherReporter.java`, ensuring the pseudo-code file, the raw Python, and the Java output can be inspected together.
+During phase two, the translation model references this pseudo-code line by line and emits Java code that adheres to the same branch/loop layout. The generated method is stored in `gen_java/task_0142/ir_pseudocode/function_requests_fetch_average_temperature.java`, ensuring the pseudo-code file, the raw Python, and the Java output can be inspected together.
 
 **Prompt template.**
 
+*Stage A (IR extraction)*
+
 ```text
-Stage A — System: You are a code analysis assistant that provides structured summaries.
-Stage A — User:
+System: You are a code analysis assistant that provides structured summaries.
+
+User:
 Please analyze the following code and generate the corresponding pseudocode. The pseudocode should not reflect any specific language syntax or implementation details, and should focus solely on the core logic and steps of the algorithm. The pseudocode should be structured logically, describing the sequence of operations, decision-making processes, and function calls in a clear and understandable manner.
 
 Write only the pseudocode without any additional explanations or details.
@@ -171,8 +183,12 @@ Class name: {class_name}. The class name needs to appear.
 
 Next, I will provide the source code; you must not directly mention the source code in your response:
 {source_code}
+```
 
-Stage B — User:
+*Stage B (translation)*
+
+```text
+User:
 Please generate the {language} code that implements the following functionality:
 
 {pseudocode}
@@ -193,21 +209,28 @@ the "observations" array, computes their mean, rounds the result to two
 decimal places, and returns the rounded value.
 ```
 
-The description acts as the IR provided to the translator, supplying enough semantic anchors (HTTP request, JSON parsing, averaging, rounding) without prescribing control structure. The ensuing Java file resides in `gen_java/task_0142/ir_summary/WeatherReporter.java`.
+The description acts as the IR provided to the translator, supplying enough semantic anchors (HTTP request, JSON parsing, averaging, rounding) without prescribing control structure. The ensuing Java file resides in `gen_java/task_0142/ir_summary/function_requests_fetch_average_temperature.java`.
 
 **Prompt template.**
 
+*Stage A (IR extraction)*
+
 ```text
-Stage A — System: You are a code analysis assistant that provides structured summaries.
-Stage A — User:
+System: You are a code analysis assistant that provides structured summaries.
+
+User:
 Please analyze the following code and generate a summary of its functionality. The summary should not focus on specific language syntax, but should explain the key steps, purpose of the code, and overall logic of the program or class in a concise manner.
 
 Class name: {class_name}. The class name should be included in the summary.
 
 Next, I will provide the source code; you must not directly mention the source code in your response:
 {source_code}
+```
 
-Stage B — User:
+*Stage B (translation)*
+
+```text
+User:
 Please generate the {language} code that implements the following functionality:
 
 {summary}
@@ -251,7 +274,7 @@ The RA(Method) pipeline mirrors the procedure described in the paper: rather tha
 - Uses `OkHttpClient.newCall(...).execute()` plus `org.json` parsing exactly as shown in the answers.
 - Aggregates and rounds temperatures following the `BigDecimal` recipe.
 
-The final code is recorded under `gen_java/task_0142/ra_method/WeatherReporter.java`, together with the query/answer artifacts that explain the retrieval trail.
+The final code is recorded under `gen_java/task_0142/ra_method/function_requests_fetch_average_temperature.java`, together with the query/answer artifacts that explain the retrieval trail.
 
 **Prompt templates.**
 
@@ -265,9 +288,9 @@ Analyze the following code snippet written in {src}, and generate a single, conc
 4. Be enclosed in triple single quotes (''').
 
 Code snippet:
-```{src}
+\`\`\`{src}
 {code}
-```
+\`\`\`
 
 Answer-conditioned translation — System: You are a helpful assistant for code translation.
 Answer-conditioned translation — User:
@@ -293,7 +316,7 @@ RA(Name) follows a two-stage process whose implementation exactly matches the sc
    ```text
    signature_out/task_0142.json
    {
-       "class_name": "WeatherReporter",
+       "class_name": "FunctionRequestsFetchAverageTemperature",
        "method": {
            "name": "fetchAverageTemperature",
            "return_type": "double",
@@ -328,7 +351,7 @@ RA(Name) follows a two-stage process whose implementation exactly matches the sc
 
 3. **Signature-aware prompting.** Each provider script combines the signature JSON, the retrieved answers (or the original source file if no answers exist), and a target-language-specific instruction template. Because the retrieval step only depends on method/class names, it can latch onto idiomatic StackOverflow examples even when the source implementation is terse.
 
-The generated Java file in this strategy again appears under `gen_java/task_0142/ra_name/WeatherReporter.java`, but every prediction is now traceable to the `signature_out/` and `function_stackoverflow_answers/` artifacts created beforehand.
+The generated Java file in this strategy again appears under `gen_java/task_0142/ra_name/function_requests_fetch_average_temperature.java`, but every prediction is now traceable to the `signature_out/` and `function_stackoverflow_answers/` artifacts created beforehand.
 
 **Prompt template.**
 
@@ -355,11 +378,11 @@ Begin {target} code now:
 
 ### 3.1 Build and execution command
 
-For each strategy, TransLibEval injects the generated `WeatherReporter.java` into a Maven module and runs a shared test suite. The build command used in this example run is:
+For each strategy, TransLibEval injects the generated `function_requests_fetch_average_temperature.java` into a Maven module and runs a shared test suite. The build command used in this example run is:
 
 ```bash
 export TARGET_LANG=java
-mvn -pl weather_reporter -Dtest=WeatherReporterTest test
+mvn -pl function_requests_fetch_average_temperature -Dtest=FunctionRequestsFetchAverageTemperatureTest test
 ```
 
 A typical build log for a successful compilation and test execution contains entries of the following form:
@@ -422,7 +445,7 @@ These values are derived directly from the build and test logs. For example, for
 
 Beyond automatic metrics, TransLibEval includes a human evaluation phase that focuses on library dependency awareness. For each `(task, strategy)` pair, annotators inspect the generated Java implementation (and any helper classes it invokes) and verify whether the intended target-side TPL responsibilities are actually realized.
 
-The inspection proceeds as follows. Annotators first consult the library mapping for the task to identify which target-side libraries should be responsible for HTTP communication, JSON parsing, and any other TPL-related functionality. They then open the generated `WeatherReporter.java` (and referenced helper classes, such as `WeatherGateway` or `RoundingUtils`) and locate the relevant constructor calls, method invocations, and imports. Finally, they assign a binary label `LDA = 1` if the necessary TPLs are correctly employed for their intended roles, or `LDA = 0` if the implementation either omits these libraries or misuses them in a way that breaks the logical mapping.
+The inspection proceeds as follows. Annotators first consult the library mapping for the task to identify which target-side libraries should be responsible for HTTP communication, JSON parsing, and any other TPL-related functionality. They then open the generated `function_requests_fetch_average_temperature.java` (and referenced helper classes, such as `WeatherGateway` or `RoundingUtils`) and locate the relevant constructor calls, method invocations, and imports. Finally, they assign a binary label `LDA = 1` if the necessary TPLs are correctly employed for their intended roles, or `LDA = 0` if the implementation either omits these libraries or misuses them in a way that breaks the logical mapping.
 
 ### 5.2 Example inspection record
 
