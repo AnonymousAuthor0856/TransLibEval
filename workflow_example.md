@@ -114,7 +114,11 @@ artifacts/ir_cot/task_0142/steps.txt
 
 2. **Stage B (translation).** The LLM receives the Python method plus `steps.txt` above for translation. The translated Java code for this strategy lives under `gen_java/task_0142/ir_cot/function_requests_fetch_average_temperature.java`.
 
+
+
 **Prompt template.**
+
+
 
 *Stage A (IR extraction)*
 
@@ -163,7 +167,11 @@ function fetch_average_temperature(city, days):
 
 During Stage B, the LLM references this pseudo-code line by line and emits Java code that adheres to the same branch/loop layout. The translated Java code is stored in `gen_java/task_0142/ir_pseudocode/function_requests_fetch_average_temperature.java`.
 
+
+
 **Prompt template.**
+
+
 
 *Stage A (IR extraction)*
 
@@ -207,7 +215,11 @@ decimal places, and returns the rounded value.
 
 The description acts as the IR provided to the LLM, supplying enough semantic anchors (HTTP request, JSON parsing, averaging, rounding) without prescribing control structure. The translated Java code resides in `gen_java/task_0142/ir_summary/function_requests_fetch_average_temperature.java`.
 
+
+
 **Prompt template.**
+
+
 
 *Stage A (IR extraction)*
 
@@ -274,8 +286,14 @@ The RA(Method) pipeline mirrors the procedure described in the paper: rather tha
 
 3. **Stage B (translation).** The LLM receives (a) the original Python method, (b) the retrieved answer text, and (c) strategy metadata, e.g., `src`and `tgt`. The StackOverflow excerpts act as grounded hints for OkHttp usage, error handling, and rounding semantics, thereby engancing the translation quality. The translated code is recorded under `gen_java/task_0142/ra_method/function_requests_fetch_average_temperature.java`.
 
+
+
 **Prompt template.**
+
+
+
 *Stage A.1(search query generation)*
+
 ```text
 System: You are a helpful assistant for code translation.
 User:
@@ -351,8 +369,14 @@ RA(name) follows a two-stage process whose implementation exactly matches the sc
 
 3. **Stage B(translation).** The LLM receives (a) the original Python method, (b) the retrieved answer text, and (c) strategy metadata, e.g., `sig_json`. The StackOverflow excerpts act as grounded hints for OkHttp usage, error handling, and rounding semantics, thereby engancing the translation quality. The generated Java file in this strategy again appears under `gen_java/task_0142/ra_name/function_requests_fetch_average_temperature.java`.
 
+
+
 **Prompt template.**
+
+
+
 *Stage B(translation)*
+
 ```text
 System: You are a world-class code translation assistant.
 
