@@ -174,11 +174,11 @@ All scripts live under `code/generate_strategies/<strategy_name>/` (one folder p
   ```bash
   # Step 1: signature extraction
   # <source_lang> ∈ {java, cpp, python}
-  python code/generate_strategies/RA-name/<target_lang>/signature.py \
+  python code/generate_strategies/RA(name)/<target_lang>/signature.py \
     --out <source_lang>_api_results
   
   # Step 2: translation with signature
-  python code/generate_strategies/RA-name/<target_lang>/<provider>
+  python code/generate_strategies/RA(name)/<target_lang>/<provider>
   ```
 
 - `<provider>` examples: `deepseek.py`, `qwen-max.py`, etc.
@@ -317,7 +317,7 @@ example_translations = {
 
 #### 4.3.2 IR (Pseudocode)
 
-Stage A
+*Stage A (IR extraction)*
 
 > Please analyze the following code and generate the corresponding pseudocode. The pseudocode should not reflect any specific language syntax or implementation details, and should focus solely on the core logic and steps of the algorithm. The pseudocode should be structured logically, describing the sequence of operations, decision-making processes, and function calls in a clear and understandable manner.
 >
@@ -328,7 +328,7 @@ Stage A
 > Next, I will provide the source code; you must not directly mention the source code in your response:
 > {source_code}
 
-Stage B
+*Stage B (translation)*
 
 > Please generate the {language} code that implements the following functionality:
 >
@@ -340,7 +340,7 @@ Stage B
 
 #### 4.3.3. IR(summary)
 
-Stage A
+Stage A (IR extraction)
 
 > Please analyze the following code and generate a summary of its functionality. 
 > The summary should not focus on specific language syntax, but should explain the key steps, 
@@ -351,7 +351,7 @@ Stage A
 > Next, I will provide the source code; you must not directly mention the source code in your response:
 > {source_code}
 
-Stage B
+*Stage B (translation)*
 
 > Please generate the {language} code that implements the following functionality:
 >
@@ -363,7 +363,7 @@ Stage B
 
 #### 4.3.4 IR(CoT)
 
-Stage A
+Stage A (IR extraction)
 
 > Please read the following source code for the class '{class_name}' and provide a step-by-step chain of thought that describes the logical flow and algorithmic steps. 
 >
@@ -375,7 +375,7 @@ Stage A
 > Here is the code，which provides only a step-by-step chain of thought:
 > {source_code}
 
-Stage B
+*Stage B (translation)*
 
 > Please generate the {language} code that implements the following functionality:
 >
@@ -386,6 +386,8 @@ Stage B
 
 
 #### 4.3.5 RA(name)
+
+*Stage B (translation)*
 
 > You are a world‑class expert in code translation with deep mastery of translating 
 > algorithmic {from_lang} class methods into {target} implementations.\n\n
@@ -403,7 +405,7 @@ Stage B
 
 #### 4.3.6 RA(method)
 
-Question generation
+*Stage A.2(StackOverflow retrieval)*
 
 > Analyze the following code snippet written in {src}, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into {tgt}. The question should:\n
 >         1. Be a simple sentence.\n
@@ -412,7 +414,7 @@ Question generation
 >                         4. Be enclosed in triple single quotes (''').\n\n
 >                         Code snippet:\n`{src}\n{code}\n`
 
-Code translation
+*Stage B (translation)*
 
 >  ---- No related issues: direct translation ----
 >
