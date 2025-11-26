@@ -5,6 +5,7 @@ TransLibEval is the first library-centric code translation benchmark presented i
 For a step-by-step example that traces a single Python task through every translation strategy, build, test, and evaluation stage, see [`workflow_example.md`](./workflow_example.md).
 
 
+
 ## 1 Dataset Overview
 
 TransLibEval, a TPL-focused, multi-PL code translation benchmark with 200 method-level tasks built from a Python calibration across 50 widely used libraries (data processing, ML, web, visualization, NLP, utilities, etc.). Each Python task defines exactly one top-level class with a single instance method that calls a third-party API; method signatures use primitive types only. For every task, we provide parallel Java and C++ counterparts plus equivalent unit tests (Python unittest, Java JUnit via Maven, C++ GoogleTest via NuGet).
@@ -15,7 +16,7 @@ Each task’s test suite contains five test cases—normal input, edge input, ex
 
 ### 1.1 Parallel Triplet Illustration
 
-![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/example.png)
+![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/%E5%9B%BE%E7%89%871.png)
 
 The figure above visualizes one minimal unit inside the parallel corpus: `function_request_get` shown in Python, C++, and Java. Each block contains distilled pseudo-code plus the corresponding third-party HTTP stack (`requests`, `libcurl`, `OkHttp + Jackson`). This snapshot demonstrates how every task in TransLibEval keeps the same control flow, timeout handling, JSON validation, and return semantics across the three languages, forming aligned triplets for training or evaluation.
 
@@ -51,13 +52,15 @@ The corresponding Java and C++ suites mirror the same five situations, guarantee
 
 1. **Clone the repository** and set up the environment.
 2. **Data Preparation**: Ensure the TransLibEval dataset is available and ready for LLM invocation.
-3. **Running Experiments**: Use the **Execute strategy code generation** flow described in **Open-Source Code** (Direct, RA(method), IR variants, RA(name)), then run the **automated test suites** as outlined in **Test Suites** (Python/Java/C++). We also provide a manually executed version, placed in the "manual" folder.
+3. **Running Experiments**: Use the **Execute experiments with CLI** flow described in **Setup with Automated Execution**. We also provide a manually executed version, placed in the "manual" folder, see in **Setup with Manual Execution**.
 
 
 
 ## 3 Setup with Automated Execution
 
-This repository includes a lightweight CLI that can perform common setup and run tasks in an automated fashion. The "one-click" flow below is designed for a macOS development machine with zsh. It will: create a Python virtual environment, install Python dependencies, verify configuration, and optionally run generation and test suites.
+### 3.1 Environment Setup
+
+This repository includes a lightweight CLI that can perform common setup and run tasks in an automated fashion. The "one-click" flow below is designed for a macOS development machine with zsh. It will: create a Python virtual environment, install Python dependencies, verify configuration, and optionally run translation and test suites.
 
 Prerequisites
 
@@ -103,21 +106,21 @@ brew install some-cpp-lib another-lib
 
 ```bash
 python scripts/translib_cli.py env            # show env/config status; use --show-values to print values
-python scripts/translib_cli.py generate --strategies direct --dry-run  # dry run generation
-python scripts/translib_cli.py generate --strategies direct            # run generation
+python scripts/translib_cli.py generate --strategies direct --dry-run  # dry run translation
+python scripts/translib_cli.py generate --strategies direct            # run translation
 python scripts/translib_cli.py test cpp2py data/python/src             # isolated cpp→python tests
 python scripts/translib_cli.py test java2py path/to/py_funcs
 python scripts/translib_cli.py test py2cpp data/cpp/src                # copy function_*.cpp -> C++ suite/src & run
 python scripts/translib_cli.py test java2cpp path/to/cpp_funcs
 ```
 
-### 3.1 TransLib CLI Details
+### 3.2 Execute experiments with CLI
 
 1. `python scripts/translib_cli.py env [--show-values]`  
    Reports readiness of required env vars (OpenAI/Qwen/Qianfan/Deepseek/Google CSE). Use `--show-values` only when it is safe to print secrets.
 
 2. `python scripts/translib_cli.py generate [--strategies ...] [--dry-run] [--stop-on-error]`  
-   Runs the high-level generation scripts:
+   Runs the high-level translation scripts:
    - `--strategies`: any subset of `direct`, `ra-method`, `ra-name`, `ir-pseudocode`, `ir-summary`, `ir-cot`.  
    - IR strategies run `Sum_*` scripts before the base scripts. RA(name) runs `signature.py`, then `Serch/Search.py`, then all model drivers per language.  
    - `--dry-run` lists scripts without executing; `--stop-on-error` aborts on the first failure.
@@ -147,9 +150,9 @@ To make third-party-library–aware code translation comparable across different
 
 
 
-### 4.1 Execute Strategy Code Generation
+### 4.1 Execute Strategy Code Translation
 
-All generation/invocation scripts live under `code/generate_strategies/<strategy_name>/` (one folder per strategy).  Concretely: 
+All scripts live under `code/generate_strategies/<strategy_name>/` (one folder per strategy).  Concretely: 
 
 - **Direct** / **RA(method)** — run the provider script **directly**.
 
@@ -384,7 +387,7 @@ Stage B
 
 #### 4.3.5 RA(name)
 
-> You are a world‑class expert in code generation with deep mastery of translating 
+> You are a world‑class expert in code translation with deep mastery of translating 
 > algorithmic {from_lang} class methods into {target} implementations.\n\n
 > Below are the precise function signature details and either community‑sourced reference 
 > implementations or the original C++ code as fallback. Your task is to generate clean, 
@@ -409,7 +412,7 @@ Question generation
 >                         4. Be enclosed in triple single quotes (''').\n\n
 >                         Code snippet:\n`{src}\n{code}\n`
 
-Code generation
+Code translation
 
 >  ---- No related issues: direct translation ----
 >
