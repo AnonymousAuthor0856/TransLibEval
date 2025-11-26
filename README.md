@@ -162,22 +162,29 @@ All scripts live under `code/generate_strategies/<strategy_name>/` (one folder p
   python code/generate_strategies/RA-method/<provider>
   ```
 
-- **IR strategies (3 variants)** — run the **target-language–specific** script under that strategy.
+- **IR strategies (CoT, pseudocode, summary)** — run the **target-language** script under that strategy.
 
   ```bash
   # <ir> ∈ {IR（*）, e.g., IR（CoT）, IR（pseudocode）, IR(summary)}; <target_lang> ∈ {java, cpp, python}
+  # Stage A: IR extraction
+  python code/generate_strategies/<ir>/<target_lang>/Sum_<provider>
+  
+  # Stage A: translation
   python code/generate_strategies/<ir>/<target_lang>/<provider>
   ```
 
 - **RA(name)** — first extract the function signature for the **target language**, then run the provider script.
 
   ```bash
-  # Step 1: signature extraction
   # <source_lang> ∈ {java, cpp, python}
+  # Stage A.1: search query generation
   python code/generate_strategies/RA(name)/<target_lang>/signature.py \
     --out <source_lang>_api_results
+    
+  # Stage A.2: StackOverflow retrieval
+  python code/generate_strategies/RA(name)/<target_lang>/Search.py # Just need to run once.
   
-  # Step 2: translation with signature
+  # Stage B: translation
   python code/generate_strategies/RA(name)/<target_lang>/<provider>
   ```
 
