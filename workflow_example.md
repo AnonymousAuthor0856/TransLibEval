@@ -1,6 +1,6 @@
 # An Example of TransLibEval Workflow 
 
-This section presents a single task, `function_requests_fetch_average_temperature.fetch_average_temperature`, as a representative end-to-end run of TransLibEval. The example follows the complete pipeline from source code and third-party library (TPL) usage on the Python side, through six translation strategies (Direct, three IR-based, and two retrieval-augmented), to Java target code, build and test execution, automatic metrics (CSR / PR / CA), and human evaluation of Library Dependency Awareness (LDA). Target-side implementations are referred to but not reproduced in full; the focus is on the observable artifacts in each stage.
+This section presents a single task, `function_requests_fetch_average_temperature.fetch_average_temperature`, as a representative end-to-end run of TransLibEval. The example follows the complete pipeline from source code with third-party library (TPL) usage on the Python side, through six translation strategies (Direct, three IR-based, and two retrieval-augmented), to Java target code, build and test execution, automatic metrics (CSR / PR / CA), and human evaluation of Library Dependency Awareness (LDA). 
 
 
 
@@ -8,13 +8,9 @@ This section presents a single task, `function_requests_fetch_average_temperatur
 
 ### 1.1 Task overview
 
-The source program is written in Python and the target language in this run is Java. The task models a small library-like function that depends on a Python HTTP client library and is expected to be translated into an equivalent Java implementation that uses appropriate HTTP and JSON handling facilities.
+The source program is written in Python and the target language in this run is Java. The Python method under evaluation is `fetch_average_temperature(city: str, days: int) -> float`. Conceptually, this method queries a weather API endpoint with a city name and a number of days, retrieves a JSON payload containing a sequence of temperature observations in Celsius, computes the arithmetic mean over all observations, rounds the result to two decimal places, and returns the rounded value as a `float`. On the Python side, HTTP and JSON are handled uniformly via the `requests` library; there is no explicit dependency on additional numeric or data-frame libraries.
 
-The core method under evaluation is `fetch_average_temperature(city: str, days: int) -> float`. Conceptually, this method queries a weather API endpoint with a city name and a number of days, retrieves a JSON payload containing a sequence of temperature observations in Celsius, computes the arithmetic mean over all observations, rounds the result to two decimal places, and returns the rounded value as a `float`. On the Python side, HTTP and JSON are handled uniformly via the `requests` library; there is no explicit dependency on additional numeric or data-frame libraries.
-
-### 1.2 Source code with TPL usage
-
-The benchmark stores the source implementation as the canonical Python reference for this task:
+### 1.2 Python source code with TPL usage
 
 ```python
 import requests
@@ -33,45 +29,42 @@ class FunctionRequestsFetchAverageTemperature:
         return round(mean_value, 2)
 ```
 
-In subsequent stages, this method is treated as the unit of translation. The method body is part of the model input, together with task metadata.
-
-In the released dataset, every task adheres to the canonical naming pattern `function_<library>_<api>.{py,java,cpp}`. Accordingly, this example lives in `function_requests_fetch_average_temperature.py` and defines the matching class `FunctionRequestsFetchAverageTemperature`, with parallel target-language stubs such as `function_requests_fetch_average_temperature.java`.
+In the released dataset, every task file adheres to the canonical naming pattern, i.e., `function_<library>_<api>.{py,java,cpp}`. Accordingly, this example lives in `function_requests_fetch_average_temperature.py` and defines the matching class `FunctionRequestsFetchAverageTemperature`, with parallel target-language counterpatrs, such as `function_requests_fetch_average_temperature.java`.
 
 ### 1.3 Library Mapping
 
-For each TransLibEval task, the benchmark designer specifies an intended mapping between source-side and target-side libraries. This mapping is used for ground-truth implementations and for human LDA assessment; it is not directly included in the model input.
+For each TransLibEval task, we specifies an intended mapping between source-side and target-side libraries. This mapping is used for ground-truth implementations and for human LDA assessment; it is not included in the model input. Below is the expected library mapping between Python and Java sides.
 
 | Source TPL (Python) | Role                                                        | Target TPL (Java)                                            | Role                                             |
 | ------------------- | ----------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------ |
 | `requests`          | Issue HTTP GET requests, handle errors, parse JSON payloads | `okhttp3.OkHttpClient`, `okhttp3.Request`, `okhttp3.HttpUrl` (HTTP)`org.json.JSONObject`, `org.json.JSONArray` (JSON) | Build and execute requests, parse JSON responses |
 
-On the Python side, the mean and rounding logic rely solely on the standard library (`sum`, `len`, `round`). On the Java side, the expected behavior is reproduced using standard APIs such as `DoubleStream` for aggregation and `BigDecimal` for decimal rounding.
+### 1.4 Test Suite Design
 
-### 1.4  Workflow Checklist
+The test suite for this task consists of five JUnit test cases to assess the translated Java code, each corresponding to a behavioral category that is shared across tasks in the benchmark. The tests exercise nominal, boundary, error, and robustness conditions.
 
-For this task, the end-to-end run produces the following classes of artifacts:
-
-| Stage        | Artifact type                                                |
-| ------------ | ------------------------------------------------------------ |
-| Source prep  | Python source file, TPL declaration, library mapping configuration |
-| Translation  | Per-strategy model logs, intermediate IR or retrieval outputs, target code |
-| Build & Test | Strategy-specific build logs, JUnit test results for a shared test suite |
-| Metrics      | CSR / PR / CA entries recorded per task and per strategy     |
-| Human eval   | LDA annotation records and supporting evidence extracted from target code |
-
+| Test case ID          | Input characteristics                      | Bucket category     | Expected outcome                                 |
+| --------------------- | ------------------------------------------ | ------------------- | ------------------------------------------------ |
+| `test_nominal_city`   | Valid city name, `days = 5`                | Nominal semantics   | Correct mean is returned                         |
+| `test_edge_zero_day`  | `days = 0`                                 | Boundary adherence  | Defined behavior on empty window (e.g., `NaN`)   |
+| `test_missing_field`  | One observation missing the `temp_c` field | Exception semantics | Appropriate exception                            |
+| `test_type_violation` | `city = None` (or analogous invalid input) | Type conformance    | Error or exception                               |
+| `test_large_window`   | `days = 30`                                | Resource resilience | Completes within time and returns a valid result |
 
 
 ## 2 Translation Strategies
 
-For each of the six strategies, TransLibEval records what information is given to the model, what intermediate artifacts are produced, and where the final Java method is written. The prompts themselves are not reproduced here; instead, we describe the content that conditions the model at each step. Target-side Java code is referenced by filename and structural properties rather than shown in full.
+For each of the six strategies, TransLibEval records what information is given to the LLM, what intermediate artifacts are produced, and where the final Java code is written. The prompts themselves are not listed here; instead, we describe the content that conditions the LLM at each step. Target-side Java code is referenced by filename and structural properties rather than shown in full.
 
 ### 2.1 Direct Strategy
 
-In the Direct strategy, the model is conditioned on the Python method and a brief task description. No explicit intermediate representation is requested. The model directly outputs a Java implementation of an instance method `fetchAverageTemperature(String city, int days)` belonging to a `FunctionRequestsFetchAverageTemperature` class.
+In the Direct strategy, the LLM is conditioned on the Python method and a brief task description only. The LLM directly outputs a Java implementation of an instance method `fetchAverageTemperature(String city, int days)` belonging to a `FunctionRequestsFetchAverageTemperature` class.
 
-![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/72dec4fe1e4c0b33eb25dfe639498d40.png)
+<img src=https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/72dec4fe1e4c0b33eb25dfe639498d40.png align="center" width=500 />
 
-**Prompt template (per README – Prompts by Strategy).**
+
+
+**Prompt template.**
 
 ```text
 System: You are a code translation assistant. Only return the translated code without any additional explanations or text.
@@ -93,21 +86,20 @@ Source Code:
 Target Code:
 ```
 
-`{source_example}` and `{target_example}` are drawn from the built-in exemplar dictionary, anchoring the model before it sees the true task payload `{input_code}`.
+`{source_example}` and `{target_example}` are drawn from the built-in exemplar dictionary, anchoring the LLM before it sees the true task payload `{input_code}`.
+
+### 2.2 IR Strategies
+The three IR strategies share a common two-stage template: (1) build an intermediate description that abstracts the Python implementations, persist it under `artifacts/ir_*`, and (2) prompt the LLM to translate the code while quoting that IR verbatim. The differences lie in what the IR looks like (COT, pseudocode, or summary).
+
+<img src=https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/05f501167b9d513037a257f124900245.png align="center" width=700 />
 
 
 
-
-
-The three IR strategies share a common two-phase template: (1) build an intermediate description that abstracts the Python specifics, persist it under `artifacts/ir_*`, and (2) prompt the model to translate the method again while quoting that IR verbatim. The differences lie in what the IR looks like (reasoning, pseudocode, or prose), but the downstream handling—feeding both the original code and the intermediate file into the generator and saving results under `gen_java/task_0142/ir_*/function_requests_fetch_average_temperature.java`—remains consistent.
-
-![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/05f501167b9d513037a257f124900245.png)
-
-### 2.2 IR(CoT) Strategy
+#### 2.2.1 IR(CoT) Strategy
 
 IR(CoT) explicitly captures every functional checkpoint before emitting code. The pipeline unfolds as:
 
-1. **Reasoning extraction.** A prompt asks the model to rewrite the Python control flow as numbered natural-language steps. The result is persisted for reproducibility:
+1. **Stage A (IR extraction).** A prompt asks the LLM to rewrite the Python control flow as numbered natural-language steps, like below:
 
 ```text
 artifacts/ir_cot/task_0142/steps.txt
@@ -120,9 +112,7 @@ artifacts/ir_cot/task_0142/steps.txt
 7. Round the mean to two decimal places and return it.
 ```
 
-2. **IR-conditioned translation.** The translator receives the Python method plus `steps.txt`. Because the IR already commits to using HTTP requests, JSON parsing, averaging, and rounding, the downstream Java code mirrors those operations tightly.
-
-The final Java artifact for this strategy lives under `gen_java/task_0142/ir_cot/function_requests_fetch_average_temperature.java`, accompanied by logs that cite the IR file that guided the generation.
+2. **Stage B (translation).** The LLM receives the Python method plus `steps.txt` above for translation. The translated Java code for this strategy lives under `gen_java/task_0142/ir_cot/function_requests_fetch_average_temperature.java`.
 
 **Prompt template.**
 
@@ -154,9 +144,9 @@ Please generate the {language} code that implements the following functionality:
 Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
-### 2.3 IR(pseudocode) Strategy
+#### 2.2.2 IR(pseudocode) Strategy
 
-IR(Pseudocode) follows the same two-phase pattern, except the IR is structured pseudo-code:
+IR(pseudocode) follows the same two-stage pattern, except the IR is structured pseudo-code:
 
 ```text
 artifacts/ir_pseudo/task_0142/pseudocode.txt
@@ -171,7 +161,7 @@ function fetch_average_temperature(city, days):
     return round(mean_value, 2)
 ```
 
-During phase two, the translation model references this pseudo-code line by line and emits Java code that adheres to the same branch/loop layout. The generated method is stored in `gen_java/task_0142/ir_pseudocode/function_requests_fetch_average_temperature.java`, ensuring the pseudo-code file, the raw Python, and the Java output can be inspected together.
+During Stage B, the LLM references this pseudo-code line by line and emits Java code that adheres to the same branch/loop layout. The translated Java code is stored in `gen_java/task_0142/ir_pseudocode/function_requests_fetch_average_temperature.java`.
 
 **Prompt template.**
 
@@ -202,9 +192,9 @@ Please generate the {language} code that implements the following functionality:
 Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
-### 2.4 IR(summary) Strategy
+#### 2.2.3 IR(summary) Strategy
 
-IR(Summary) condenses the behavior into a concise narrative instead of enumerated steps:
+IR(Summary) condenses the behavior into a concise summaries instead of enumerated steps:
 
 ```text
 artifacts/ir_summary/task_0142/summary.txt
@@ -215,7 +205,7 @@ the "observations" array, computes their mean, rounds the result to two
 decimal places, and returns the rounded value.
 ```
 
-The description acts as the IR provided to the translator, supplying enough semantic anchors (HTTP request, JSON parsing, averaging, rounding) without prescribing control structure. The ensuing Java file resides in `gen_java/task_0142/ir_summary/function_requests_fetch_average_temperature.java`.
+The description acts as the IR provided to the LLM, supplying enough semantic anchors (HTTP request, JSON parsing, averaging, rounding) without prescribing control structure. The translated Java code resides in `gen_java/task_0142/ir_summary/function_requests_fetch_average_temperature.java`.
 
 **Prompt template.**
 
@@ -244,17 +234,19 @@ Please generate the {language} code that implements the following functionality:
 Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
+### 2.3 RA Strategies
+
+Both RA variants enrich the translation prompt with external evidence from StackOverflow: RA(method) builds a custom question from the entire method body, whereas RA(name) relies on method names. The two subsections below detail how each pipeline constructs its retrieval references and how those references feed back into translation.
+
+<img src=https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/%E5%9B%BE%E7%89%871.png align="center" width=900 />
 
 
-Both RA variants enrich the translation prompt with external evidence from StackOverflow: RA(method) builds a custom question from the entire method body, whereas RA(name) relies on structured signatures and method/class names. The two subsections below detail how each pipeline constructs its retrieval artifacts and how those artifacts feed back into generation.
 
-![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/2571ac8f6bf9389f4866b31766b868c5.png)
-
-### 2.5 RA(method) Strategy
+#### 2.3.1 RA(method) Strategy
 
 The RA(Method) pipeline mirrors the procedure described in the paper: rather than retrieving arbitrary code blobs, it gathers StackOverflow answers that are relevant to the full method body. Each task goes through the following steps:
 
-1. **Question synthesis.** A lightweight LLM consumes the complete Python method and produces a single natural-language question that summarizes what the Java translation needs to accomplish. The prompt and response are logged for traceability:
+1. **Stage A.1(search query generation).** An LLM consumes the complete Python method and produces a single natural-language query that summarizes what the Java translation needs to accomplish. Below is a synthesized query.
 
    ```text
    artifacts/retrieval/task_0142/ra_method/query.txt
@@ -263,7 +255,7 @@ The RA(Method) pipeline mirrors the procedure described in the paper: rather tha
    average temperature rounded to two decimals?'''
    ```
 
-2. **StackOverflow retrieval.** The generated question is issued to Google Custom Search (restricted to StackOverflow). The top-ranked question ID is fed into the StackExchange API, and the three highest-voted answers are saved as plain text:
+2. **Stage A.2 (StackOverflow retrieval).** The generated query is sent to Google Custom Search (restricted to StackOverflow) and return top-1 most relevant post with three highest-voted answers, below is one of the answer saving in the file `answers_question37192562.txt`:
 
    ```text
    artifacts/retrieval/task_0142/ra_method/answers_question37192562.txt
@@ -280,19 +272,13 @@ The RA(Method) pipeline mirrors the procedure described in the paper: rather tha
    }
    ```
 
-3. **Answer-conditioned translation.** The translation model receives (a) the original Python method, (b) the retrieved answer text, and (c) strategy metadata. The StackOverflow excerpts act as grounded hints for OkHttp usage, error handling, and rounding semantics. The resulting Java implementation therefore:
+3. **Stage B (translation).** The LLM receives (a) the original Python method, (b) the retrieved answer text, and (c) strategy metadata, e.g., `src`and `tgt`. The StackOverflow excerpts act as grounded hints for OkHttp usage, error handling, and rounding semantics, thereby engancing the translation quality. The translated code is recorded under `gen_java/task_0142/ra_method/function_requests_fetch_average_temperature.java`.
 
-- Packages `city` and `days` into a map that drives `HttpUrl.Builder`.
-- Uses `OkHttpClient.newCall(...).execute()` plus `org.json` parsing exactly as shown in the answers.
-- Aggregates and rounds temperatures following the `BigDecimal` recipe.
-
-The final code is recorded under `gen_java/task_0142/ra_method/function_requests_fetch_average_temperature.java`, together with the query/answer artifacts that explain the retrieval trail.
-
-**Prompt templates.**
-
+**Prompt template.**
+*Stage A.1(search query generation)*
 ```text
-Question synthesis — System: You are a helpful assistant for code translation.
-Question synthesis — User:
+System: You are a helpful assistant for code translation.
+User:
 Analyze the following code snippet written in {src}, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into {tgt}. The question should:
 1. Be a simple sentence.
 2. Avoid including the original code snippet directly.
@@ -303,9 +289,11 @@ Code snippet:
 \`\`\`{src}
 {code}
 \`\`\`
-
-Answer-conditioned translation — System: You are a helpful assistant for code translation.
-Answer-conditioned translation — User:
+```
+*Stage B (translation)*
+```text
+System: You are a helpful assistant for code translation.
+User:
 Using the following StackOverflow answers as reference, translate this {src} code into {tgt}:
 
 {answers_concatenated}
@@ -319,11 +307,11 @@ Translate the following {src} code into {tgt}:
 {code}
 ```
 
-### 2.6 RA(name) Strategy
+#### 2.3.2 RA(name) Strategy
 
-RA(Name) follows a two-stage process whose implementation exactly matches the scripts in `code/generate_strategies/RA(name)/`:
+RA(name) follows a two-stage process whose implementation exactly matches the scripts in `code/generate_strategies/RA(name)/`:
 
-1. **Signature extraction.** `signature.py` walks through the source directory (Python/Java/C++ depending on the translation direction) and emits structured metadata per task. For the running example:
+1. **Stage A.1(Signature extraction).** `signature.py` walks through the source directory (Python/Java/C++ depending on the translation direction) and emits structured metadata per task. For the running example:
 
    ```text
    signature_out/task_0142.json
@@ -341,7 +329,7 @@ RA(Name) follows a two-stage process whose implementation exactly matches the sc
    }
    ```
 
-2. **Name-only StackOverflow search.** `Search.py` (spelled `Serch.py` in the C++ folder) iterates over the extracted signatures, issues queries of the form `"<target language> <method name>"`, and stores the resulting StackOverflow question IDs and top answers inside `function_stackoverflow_answers/<target>_function_results/*.json`:
+2. **Stage A.2(StackOverflow retrieval).** `Search.py` (spelled `Serch.py` in the C++ folder) iterates over the extracted signatures, issues queries of the form `"<target language>: <method name>"`, and stores the resulting StackOverflow question IDs and top answers inside `function_stackoverflow_answers/<target>_function_results/*.json`:
 
    ```text
    function_stackoverflow_answers/java_function_results/task_0142_results.json
@@ -361,17 +349,15 @@ RA(Name) follows a two-stage process whose implementation exactly matches the sc
    ]
    ```
 
-3. **Signature-aware prompting.** Each provider script combines the signature JSON, the retrieved answers (or the original source file if no answers exist), and a target-language-specific instruction template. Because the retrieval step only depends on method/class names, it can latch onto idiomatic StackOverflow examples even when the source implementation is terse.
-
-The generated Java file in this strategy again appears under `gen_java/task_0142/ra_name/function_requests_fetch_average_temperature.java`, but every prediction is now traceable to the `signature_out/` and `function_stackoverflow_answers/` artifacts created beforehand.
+3. **Stage B(translation).** The LLM receives (a) the original Python method, (b) the retrieved answer text, and (c) strategy metadata, e.g., `sig_json`. The StackOverflow excerpts act as grounded hints for OkHttp usage, error handling, and rounding semantics, thereby engancing the translation quality. The generated Java file in this strategy again appears under `gen_java/task_0142/ra_name/function_requests_fetch_average_temperature.java`.
 
 **Prompt template.**
-
+*Stage B(translation)*
 ```text
 System: You are a world-class code translation assistant.
 
 User:
-You are a world-class expert in code generation with deep mastery of translating algorithmic {from_lang} class methods into {target} implementations.
+You are a world-class expert in code generation with deep mastery of translating {from_lang} class methods into {target} implementations.
 
 Below are the precise function signature details and either community-sourced reference implementations or the original {from_lang} code as fallback. Your task is to generate clean, idiomatic, and fully functional {target} code that exactly matches the behavior.
 
@@ -386,7 +372,7 @@ Produce only the final {target} code. Do not include any explanations, comments,
 Begin {target} code now:
 ```
 
-### 2.7 Build Execution Commands
+### 2.4 Build Execution Commands
 
 For each strategy, TransLibEval injects the generated `function_requests_fetch_average_temperature.java` into a Maven module and runs a shared test suite. The build command used in this example run is:
 
@@ -410,26 +396,12 @@ Separate logs are stored per strategy, for example:
 - `logs/task_0142/direct/compile.log` and `logs/task_0142/direct/test.log`
 - `logs/task_0142/ir_cot/compile.log` and `logs/task_0142/ir_cot/test.log`, and so on.
 
-### 2.8 Test Suite Design
-
-The test suite for this task consists of five JUnit test cases, each corresponding to a behavioral category that is shared across tasks in the benchmark. The tests exercise nominal, boundary, error, and robustness conditions.
-
-| Test case ID          | Input characteristics                      | Bucket category     | Expected outcome                                 |
-| --------------------- | ------------------------------------------ | ------------------- | ------------------------------------------------ |
-| `test_nominal_city`   | Valid city name, `days = 5`                | Nominal semantics   | Correct mean is returned                         |
-| `test_edge_zero_day`  | `days = 0`                                 | Boundary adherence  | Defined behavior on empty window (e.g., `NaN`)   |
-| `test_missing_field`  | One observation missing the `temp_c` field | Exception semantics | Appropriate exception                            |
-| `test_type_violation` | `city = None` (or analogous invalid input) | Type conformance    | Error or exception                               |
-| `test_large_window`   | `days = 30`                                | Resource resilience | Completes within time and returns a valid result |
-
-For each strategy, the test runner records the number of tests executed, the number passed, and the status of individual test cases in a JSON log.
 
 
 
 ## 3 Automatic Metrics (CSR, PR, CA)
 
-TransLibEval computes three automatic metrics per task and per strategy:
-
+TransLibEval computes three automatic metrics below per task and per strategy based on pre-defined test suite, such as section 1.4 in this running example. 
 - Compilation Success Rate (CSR): for a single task in one run, CSR is 1 if compilation succeeds and 0 otherwise.
 - Pass Rate (PR): the fraction of test cases that pass, i.e., `tests_passed / tests_total`.
 - Computational Accuracy (CA): 1 if all test cases pass (i.e., PR = 1.0), and 0 if at least one test fails.
@@ -447,19 +419,17 @@ For this task and example run, the metrics are logged as:
 
 These values are derived directly from the build and test logs. For example, for the Direct strategy, the Java code compiles (`CSR = 1`), but fails one boundary-related test case (`PR = 4/5 = 0.8`, `CA = 0`), whereas the IR(CoT) and RA-based strategies pass all five tests.
 
-
-
 ## 4 Human Evaluation
 
 ### 4.1 Evaluation Procedure
 
-Beyond automatic metrics, TransLibEval includes a human evaluation phase that focuses on library dependency awareness. For each `(task, strategy)` pair, annotators inspect the generated Java implementation (and any helper classes it invokes) and verify whether the intended target-side TPL responsibilities are actually realized.
+Beyond automatic metrics, TransLibEval includes a human evaluation phase that focuses on library dependency awareness. For each `(task, strategy)` pair, annotators inspect the translated Java code (and any helper classes it invokes) and verify whether it invoke any libraries and associated APIs for implementations.
 
-The inspection proceeds as follows. Annotators first consult the library mapping for the task to identify which target-side libraries should be responsible for HTTP communication, JSON parsing, and any other TPL-related functionality. They then open the generated `function_requests_fetch_average_temperature.java` (and referenced helper classes, such as `WeatherGateway` or `RoundingUtils`) and locate the relevant constructor calls, method invocations, and imports. Finally, they assign a binary label `LDA = 1` if the necessary TPLs are correctly employed for their intended roles, or `LDA = 0` if the implementation either omits these libraries or misuses them in a way that breaks the logical mapping.
+The inspection proceeds as follows. Annotators first consult the library mapping for the translation to identify which target-side libraries are responsible for HTTP communication, JSON parsing, and so on. They then open the generated `function_requests_fetch_average_temperature.java` (and referenced helper classes, such as `WeatherGateway` or `RoundingUtils`) and locate the relevant constructor calls, method invocations, and imports. Finally, they assign a binary label `LDA = 1` if the necessary TPLs are correctly employed for implementation, or `LDA = 0` if the implementation either omits any libraries or misuses them in a way that breaks the logical mapping.
 
-### 4.2 Inspection Record Example
+### 4.2 Evidence Record Inspection 
 
-For `task_0142` and strategy IR(CoT), the annotator’s evidence record has the following structure:
+Using strategy IR(CoT) as an example, the annotator’s evidence record has the following structure:
 
 | Checkpoint               | Evidence snippet (file and line)                             | Conclusion |
 | ------------------------ | ------------------------------------------------------------ | ---------- |
