@@ -122,7 +122,7 @@ python scripts/translib_cli.py test java2cpp path/to/cpp_funcs
 2. `python scripts/translib_cli.py generate [--strategies ...] [--dry-run] [--stop-on-error]`  
    Runs the high-level translation scripts:
    - `--strategies`: any subset of `direct`, `ra-method`, `ra-name`, `ir-pseudocode`, `ir-summary`, `ir-cot`.  
-   - IR strategies run `Sum_*` scripts before the base scripts. RA(name) runs `signature.py`, then `Serch/Search.py`, then all model drivers per language.  
+   - IR strategies run `Sum_*` scripts before the base scripts. RA(name) runs `signature.py`, then `Search.py`, then all model drivers per language.  
    - `--dry-run` lists scripts without executing; `--stop-on-error` aborts on the first failure.
 
 3. `python scripts/translib_cli.py test <pipeline> <source_dir>`  
