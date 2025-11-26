@@ -67,14 +67,41 @@ In the Direct strategy, the LLM is conditioned on the Python method and a brief 
 **Prompt template.**
 
 ```text
-Example:Translate the following {from_lang} code to {to_lang}.\n\n
+Example:Translate the following Python code to C++.\n\n
 Source Code:\n
-{source_example}\n\n
+from faker import Faker
+
+        class NameGenerator:
+            def generate_name(self):
+                fake = Faker()
+                return fake.name()
 Target Code:\n
-{target_example}\n\n
+#include <fakeit.hpp>
+        #include <string>
+
+        class NameGenerator {
+        public:
+            std::string generate_name() {
+                fakeit::FakeIt fake;
+                return fake.name();
+            }
+        };
 Translate the following {from_lang} code to {to_lang}. Only return the translated code without any explanations or additional text.\n\n
 Source Code:\n
-{input_code.strip()}\n\n
+import requests
+
+class FunctionRequestsFetchAverageTemperature:
+    BASE_URL = "https://api.fakeweather.dev/v1/temperature"
+
+    def fetch_average_temperature(self, city: str, days: int) -> float:
+        params = {"city": city, "days": days}
+        resp = requests.get(self.BASE_URL, params=params, timeout=5)
+        resp.raise_for_status()
+
+        observations = resp.json()["observations"]
+        temps = [float(row["temp_c"]) for row in observations]
+        mean_value = sum(temps) / len(temps)
+        return round(mean_value, 2)
 Target Code:\n
 ```
 
@@ -115,21 +142,35 @@ artifacts/ir_cot/task_0142/steps.txt
 *Stage A (IR extraction)*
 
 ```text
-Please read the following source code for the class '{class_name}' and provide a step-by-step chain of thought that describes the logical flow and algorithmic steps. 
+Please read the following source code for the class 'FunctionRequestsFetchAverageTemperature' and provide a step-by-step chain of thought that describes the logical flow and algorithmic steps. 
 
 Focus on the conceptual process rather than language-specific syntax. 
 Do not quote the exact source code.
 
-Class name: {class_name}. The Class name needs to appear
+Class name: FunctionRequestsFetchAverageTemperature. The Class name needs to appear
 
 Here is the code, which provides only a step-by-step chain of thought:
-{source_code}
+
+import requests
+
+class FunctionRequestsFetchAverageTemperature:
+    BASE_URL = "https://api.fakeweather.dev/v1/temperature"
+
+    def fetch_average_temperature(self, city: str, days: int) -> float:
+        params = {"city": city, "days": days}
+        resp = requests.get(self.BASE_URL, params=params, timeout=5)
+        resp.raise_for_status()
+
+        observations = resp.json()["observations"]
+        temps = [float(row["temp_c"]) for row in observations]
+        mean_value = sum(temps) / len(temps)
+        return round(mean_value, 2)
 ```
 
 *Stage B (translation)*
 
 ```text
-Please generate the {language} code that implements the following functionality:
+Please generate the Java code that implements the following functionality:
 
 1. Send an HTTP GET request to BASE_URL with query parameters "city" and "days".
 2. Apply a timeout of 5 seconds to the HTTP request.
@@ -139,7 +180,7 @@ Please generate the {language} code that implements the following functionality:
 6. Compute the arithmetic mean of all "temp_c" values.
 7. Round the mean to two decimal places and return it.
 
-Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
+Please ensure the code is complete and correctly follows the syntax and conventions for Java, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
 #### 2.2.2 IR(pseudocode) Strategy
@@ -174,16 +215,30 @@ Please analyze the following code and generate the corresponding pseudocode. The
 
 Write only the pseudocode without any additional explanations or details.
 
-Class name: {class_name}. The Class name needs to appear
+Class name: FunctionRequestsFetchAverageTemperature. The Class name needs to appear
 
 Next, I will provide the source code; you must not directly mention the source code in your response:
-{source_code}
+
+import requests
+
+class FunctionRequestsFetchAverageTemperature:
+    BASE_URL = "https://api.fakeweather.dev/v1/temperature"
+
+    def fetch_average_temperature(self, city: str, days: int) -> float:
+        params = {"city": city, "days": days}
+        resp = requests.get(self.BASE_URL, params=params, timeout=5)
+        resp.raise_for_status()
+
+        observations = resp.json()["observations"]
+        temps = [float(row["temp_c"]) for row in observations]
+        mean_value = sum(temps) / len(temps)
+        return round(mean_value, 2)
 ```
 
 *Stage B (translation)*
 
 ```text
-Please generate the {language} code that implements the following functionality:
+Please generate the Java code that implements the following functionality:
 
 function fetch_average_temperature(city, days):
     url = BASE_URL with query parameters "city" and "days"
@@ -195,7 +250,7 @@ function fetch_average_temperature(city, days):
     mean_value = average(temps)
     return round(mean_value, 2)
 
-Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
+Please ensure the code is complete and correctly follows the syntax and conventions for Java, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
 #### 2.2.3 IR(summary) Strategy
@@ -226,16 +281,30 @@ Please analyze the following code and generate a summary of its functionality.
 The summary should not focus on specific language syntax, but should explain the key steps, 
 purpose of the code, and overall logic of the program or class in a concise manner.
 
-Class name: {class_name}. The class name should be included in the summary.
+Class name: FunctionRequestsFetchAverageTemperature. The class name should be included in the summary.
 
 Next, I will provide the source code; you must not directly mention the source code in your response:
-{source_code}
+
+import requests
+
+class FunctionRequestsFetchAverageTemperature:
+    BASE_URL = "https://api.fakeweather.dev/v1/temperature"
+
+    def fetch_average_temperature(self, city: str, days: int) -> float:
+        params = {"city": city, "days": days}
+        resp = requests.get(self.BASE_URL, params=params, timeout=5)
+        resp.raise_for_status()
+
+        observations = resp.json()["observations"]
+        temps = [float(row["temp_c"]) for row in observations]
+        mean_value = sum(temps) / len(temps)
+        return round(mean_value, 2)
 ```
 
 *Stage B (translation)*
 
 ```text
-Please generate the {language} code that implements the following functionality:
+Please generate the Java code that implements the following functionality:
 
 The method contacts a weather API using an HTTP GET request with parameters
 city and days. It verifies that the response status indicates success before
@@ -243,7 +312,7 @@ parsing the JSON body. It extracts a sequence of Celsius temperatures from
 the "observations" array, computes their mean, rounds the result to two
 decimal places, and returns the rounded value.
 
-Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
+Please ensure the code is complete and correctly follows the syntax and conventions for Java, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
 ### 2.3 RA Strategies
@@ -295,21 +364,36 @@ The RA(Method) pipeline mirrors the procedure described in the paper: rather tha
 *Stage A.1(search query generation)*
 
 ```text
-Analyze the following code snippet written in {src}, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into {tgt}. The question should:\n
+Analyze the following code snippet written in Python, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into Java. The question should:\n
 1. Be a simple sentence.\n
 2. Avoid including the original code snippet directly.\n
 3. Clearly describe the key functionality or purpose of the code that needs to be translated.\n
 4. Be enclosed in triple single quotes (''').\n\n
-Code snippet:\n`{src}\n{code}\n`
+Code snippet:
+
+import requests
+
+class FunctionRequestsFetchAverageTemperature:
+    BASE_URL = "https://api.fakeweather.dev/v1/temperature"
+
+    def fetch_average_temperature(self, city: str, days: int) -> float:
+        params = {"city": city, "days": days}
+        resp = requests.get(self.BASE_URL, params=params, timeout=5)
+        resp.raise_for_status()
+
+        observations = resp.json()["observations"]
+        temps = [float(row["temp_c"]) for row in observations]
+        mean_value = sum(temps) / len(temps)
+        return round(mean_value, 2)
 ```
 *Stage B (translation)*
 ```text
- ---- No related issues: direct translation ----
+//---- No related issues: direct translation ----//
 
- ---- Related issues ----
+---- Related issues ----
 
- Using the following StackOverflow answers as reference, 
-      translate this {src} code into {tgt}:\n\n
+Using the following StackOverflow answers as reference, 
+      translate this Python code into Java:\n\n
       
 === Reference Implementation ===\n
 OkHttpClient client = new OkHttpClient();
@@ -325,7 +409,21 @@ try (Response response = client.newCall(request).execute()) {
 }
 
 Source Code:\n
-{input_code.strip()}\n\n
+import requests
+
+class FunctionRequestsFetchAverageTemperature:
+    BASE_URL = "https://api.fakeweather.dev/v1/temperature"
+
+    def fetch_average_temperature(self, city: str, days: int) -> float:
+        params = {"city": city, "days": days}
+        resp = requests.get(self.BASE_URL, params=params, timeout=5)
+        resp.raise_for_status()
+
+        observations = resp.json()["observations"]
+        temps = [float(row["temp_c"]) for row in observations]
+        mean_value = sum(temps) / len(temps)
+        return round(mean_value, 2)
+        
 Target Code:\n
 
 ```
@@ -384,7 +482,7 @@ RA(name) follows a two-stage process whose implementation exactly matches the sc
 
 ```text
 You are a world-class expert in code translation with deep mastery of translating 
-algorithmic {from_lang} class methods into {target} implementations.\n\n
+algorithmic Python class methods into Java implementations.\n\n
 Below are the precise function signature details and either community-sourced reference 
 implementations or the original C++ code as fallback. Your task is to generate clean, 
 idiomatic, and fully functional {target} code that exactly matches the behavior.\n\n
@@ -409,8 +507,8 @@ idiomatic, and fully functional {target} code that exactly matches the behavior.
 ... ...
 
 
-Produce only the final {target} code. Do not include any explanations, comments, or extra text.
-\n\nBegin {target} code now:\n
+Produce only the final Java code. Do not include any explanations, comments, or extra text.
+\n\nBegin Java code now:\n
 ```
 
 ### 2.4 Build Execution Commands
