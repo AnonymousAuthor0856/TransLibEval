@@ -16,7 +16,7 @@ Each task’s test suite contains five test cases—normal input, edge input, ex
 
 ### 1.1 Parallel Triplet Illustration
 
-![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/%E5%9B%BE%E7%89%871.png)
+![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/2.png)
 
 The figure above visualizes one minimal unit inside the parallel corpus: `function_request_get` shown in Python, C++, and Java. Each block contains distilled pseudo-code plus the corresponding third-party HTTP stack (`requests`, `libcurl`, `OkHttp + Jackson`). This snapshot demonstrates how every task in TransLibEval keeps the same control flow, timeout handling, JSON validation, and return semantics across the three languages, forming aligned triplets for training or evaluation.
 
@@ -150,7 +150,7 @@ To make third-party-library–aware code translation comparable across different
 
 
 
-### 4.1 Execute Strategy Code Translation
+### 4.1 Execute Code Translation with Diverse Strategies
 
 All scripts live under `code/generate_strategies/<strategy_name>/` (one folder per strategy).  Concretely: 
 
@@ -267,7 +267,7 @@ Each run produces a **JSON report** with the test results (the script prints the
 
 
 
-### 4.3 Strategy Prompt References
+### 4.3 Strategy Prompt
 
 #### 4.3.1 Direct
 
