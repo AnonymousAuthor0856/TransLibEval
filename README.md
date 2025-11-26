@@ -267,7 +267,7 @@ Each run produces a **JSON report** with the test results (the script prints the
 
 
 
-### 4.3 Strategy Prompt
+### 4.3 Prompt of Different Strategies
 
 #### 4.3.1 Direct
 
