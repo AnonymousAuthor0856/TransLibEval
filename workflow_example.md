@@ -329,7 +329,7 @@ RA(name) follows a two-stage process whose implementation exactly matches the sc
    }
    ```
 
-2. **Stage A.2(StackOverflow retrieval).** `Search.py` (spelled `Serch.py` in the C++ folder) iterates over the extracted signatures, issues queries of the form `"<target language>: <method name>"`, and stores the resulting StackOverflow question IDs and top answers inside `function_stackoverflow_answers/<target>_function_results/*.json`:
+2. **Stage A.2(StackOverflow retrieval).** `Search.py` iterates over the extracted signatures, issues queries of the form `"<target language>: <method name>"`, and stores the resulting StackOverflow question IDs and top answers inside `function_stackoverflow_answers/<target>_function_results/*.json`:
 
    ```text
    function_stackoverflow_answers/java_function_results/task_0142_results.json
