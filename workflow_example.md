@@ -67,23 +67,15 @@ In the Direct strategy, the LLM is conditioned on the Python method and a brief 
 **Prompt template.**
 
 ```text
-System: You are a code translation assistant. Only return the translated code without any additional explanations or text.
-
-User:
-Example:Translate the following {from_lang} code to {to_lang}.
-
-Source Code:
-{source_example}
-
-Target Code:
-{target_example}
-
-Translate the following {from_lang} code to {to_lang}. Only return the translated code without any explanations or additional text.
-
-Source Code:
-{input_code}
-
-Target Code:
+Example:Translate the following {from_lang} code to {to_lang}.\n\n
+Source Code:\n
+{source_example}\n\n
+Target Code:\n
+{target_example}\n\n
+Translate the following {from_lang} code to {to_lang}. Only return the translated code without any explanations or additional text.\n\n
+Source Code:\n
+{input_code.strip()}\n\n
+Target Code:\n
 ```
 
 `{source_example}` and `{target_example}` are drawn from the built-in exemplar dictionary, anchoring the LLM before it sees the true task payload `{input_code}`.
@@ -123,27 +115,29 @@ artifacts/ir_cot/task_0142/steps.txt
 *Stage A (IR extraction)*
 
 ```text
-System: You are a code analysis assistant that provides structured summaries.
+Please read the following source code for the class '{class_name}' and provide a step-by-step chain of thought that describes the logical flow and algorithmic steps. 
 
-User:
-Please read the following source code for the class '{class_name}' and provide a step-by-step chain of thought that describes the logical flow and algorithmic steps.
-
-Focus on the conceptual process rather than language-specific syntax.
+Focus on the conceptual process rather than language-specific syntax. 
 Do not quote the exact source code.
 
-Class name: {class_name}. The class name needs to appear.
+Class name: {class_name}. The Class name needs to appear
 
-Here is the code; provide only a step-by-step chain of thought:
+Here is the code, which provides only a step-by-step chain of thought:
 {source_code}
 ```
 
 *Stage B (translation)*
 
 ```text
-User:
 Please generate the {language} code that implements the following functionality:
 
-{chain_of_thought}
+1. Send an HTTP GET request to BASE_URL with query parameters "city" and "days".
+2. Apply a timeout of 5 seconds to the HTTP request.
+3. If the HTTP status code is not in the 2xx range, raise an error.
+4. Parse the JSON response body and extract the "observations" array.
+5. For each element in "observations", read the "temp_c" field and cast it to float.
+6. Compute the arithmetic mean of all "temp_c" values.
+7. Round the mean to two decimal places and return it.
 
 Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
@@ -176,14 +170,11 @@ During Stage B, the LLM references this pseudo-code line by line and emits Java 
 *Stage A (IR extraction)*
 
 ```text
-System: You are a code analysis assistant that provides structured summaries.
-
-User:
 Please analyze the following code and generate the corresponding pseudocode. The pseudocode should not reflect any specific language syntax or implementation details, and should focus solely on the core logic and steps of the algorithm. The pseudocode should be structured logically, describing the sequence of operations, decision-making processes, and function calls in a clear and understandable manner.
 
 Write only the pseudocode without any additional explanations or details.
 
-Class name: {class_name}. The class name needs to appear.
+Class name: {class_name}. The Class name needs to appear
 
 Next, I will provide the source code; you must not directly mention the source code in your response:
 {source_code}
@@ -192,10 +183,17 @@ Next, I will provide the source code; you must not directly mention the source c
 *Stage B (translation)*
 
 ```text
-User:
 Please generate the {language} code that implements the following functionality:
 
-{pseudocode}
+function fetch_average_temperature(city, days):
+    url = BASE_URL with query parameters "city" and "days"
+    response = http_get(url, timeout = 5 seconds)
+    if response.status_code is not in [200, 299]:
+        raise error
+    json = parse_json(response.body)
+    temps = [float(obs["temp_c"]) for obs in json["observations"]]
+    mean_value = average(temps)
+    return round(mean_value, 2)
 
 Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
@@ -224,10 +222,9 @@ The description acts as the IR provided to the LLM, supplying enough semantic an
 *Stage A (IR extraction)*
 
 ```text
-System: You are a code analysis assistant that provides structured summaries.
-
-User:
-Please analyze the following code and generate a summary of its functionality. The summary should not focus on specific language syntax, but should explain the key steps, purpose of the code, and overall logic of the program or class in a concise manner.
+Please analyze the following code and generate a summary of its functionality. 
+The summary should not focus on specific language syntax, but should explain the key steps, 
+purpose of the code, and overall logic of the program or class in a concise manner.
 
 Class name: {class_name}. The class name should be included in the summary.
 
@@ -238,10 +235,13 @@ Next, I will provide the source code; you must not directly mention the source c
 *Stage B (translation)*
 
 ```text
-User:
 Please generate the {language} code that implements the following functionality:
 
-{summary}
+The method contacts a weather API using an HTTP GET request with parameters
+city and days. It verifies that the response status indicates success before
+parsing the JSON body. It extracts a sequence of Celsius temperatures from
+the "observations" array, computes their mean, rounds the result to two
+decimal places, and returns the rounded value.
 
 Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
@@ -295,34 +295,39 @@ The RA(Method) pipeline mirrors the procedure described in the paper: rather tha
 *Stage A.1(search query generation)*
 
 ```text
-System: You are a helpful assistant for code translation.
-User:
-Analyze the following code snippet written in {src}, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into {tgt}. The question should:
-1. Be a simple sentence.
-2. Avoid including the original code snippet directly.
-3. Clearly describe the key functionality or purpose of the code that needs to be translated.
-4. Be enclosed in triple single quotes (''').
-
-Code snippet:
-\`\`\`{src}
-{code}
-\`\`\`
+Analyze the following code snippet written in {src}, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into {tgt}. The question should:\n
+1. Be a simple sentence.\n
+2. Avoid including the original code snippet directly.\n
+3. Clearly describe the key functionality or purpose of the code that needs to be translated.\n
+4. Be enclosed in triple single quotes (''').\n\n
+Code snippet:\n`{src}\n{code}\n`
 ```
 *Stage B (translation)*
 ```text
-System: You are a helpful assistant for code translation.
-User:
-Using the following StackOverflow answers as reference, translate this {src} code into {tgt}:
+ ---- No related issues: direct translation ----
 
-{answers_concatenated}
+ ---- Related issues ----
 
-{code}
+ Using the following StackOverflow answers as reference, 
+      translate this {src} code into {tgt}:\n\n
+      
+=== Reference Implementation ===\n
+OkHttpClient client = new OkHttpClient();
+Request request = new Request.Builder().url(builder.build()).get().build();
+try (Response response = client.newCall(request).execute()) {
+    JSONObject root = new JSONObject(response.body().string());
+    JSONArray arr = root.getJSONArray("observations");
+    double avg = IntStream.range(0, arr.length())
+        .mapToDouble(i -> arr.getJSONObject(i).getDouble("temp_c"))
+        .average()
+        .orElse(Double.NaN);
+    return BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP).doubleValue();
+}
 
-(Fallback when retrieval returns nothing)
-User:
-Translate the following {src} code into {tgt}:
+Source Code:\n
+{input_code.strip()}\n\n
+Target Code:\n
 
-{code}
 ```
 
 #### 2.3.2 RA(name) Strategy
@@ -378,22 +383,34 @@ RA(name) follows a two-stage process whose implementation exactly matches the sc
 *Stage B(translation)*
 
 ```text
-System: You are a world-class code translation assistant.
+You are a world-class expert in code translation with deep mastery of translating 
+algorithmic {from_lang} class methods into {target} implementations.\n\n
+Below are the precise function signature details and either community-sourced reference 
+implementations or the original C++ code as fallback. Your task is to generate clean, 
+idiomatic, and fully functional {target} code that exactly matches the behavior.\n\n
 
-User:
-You are a world-class expert in code generation with deep mastery of translating {from_lang} class methods into {target} implementations.
+=== Function Signature & Metadata ===\n
+{
+    "class_name": "FunctionRequestsFetchAverageTemperature",
+    "method": {
+        "name": "fetchAverageTemperature",
+        "return_type": "double",
+        "parameters": [
+            {"name": "city", "type": "String"},
+            {"name": "days", "type": "int"}
+        ],
+        "throws": ["IOException"]
+    }
+}
 
-Below are the precise function signature details and either community-sourced reference implementations or the original {from_lang} code as fallback. Your task is to generate clean, idiomatic, and fully functional {target} code that exactly matches the behavior.
+=== Reference Implementation ===\n
+"OkHttpClient client = new OkHttpClient.Builder()....",
+            "If you need rounding, wrap the average in BigDecimal..."
+... ...
 
-=== Function Signature & Metadata ===
-{sig_json}
-
-=== Reference Implementation ===
-{ref_impl}
 
 Produce only the final {target} code. Do not include any explanations, comments, or extra text.
-
-Begin {target} code now:
+\n\nBegin {target} code now:\n
 ```
 
 ### 2.4 Build Execution Commands
