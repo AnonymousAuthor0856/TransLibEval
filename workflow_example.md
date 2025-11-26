@@ -69,6 +69,8 @@ For each of the six strategies, TransLibEval records what information is given t
 
 In the Direct strategy, the model is conditioned on the Python method and a brief task description. No explicit intermediate representation is requested. The model directly outputs a Java implementation of an instance method `fetchAverageTemperature(String city, int days)` belonging to a `FunctionRequestsFetchAverageTemperature` class.
 
+![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/72dec4fe1e4c0b33eb25dfe639498d40.png)
+
 **Prompt template (per README – Prompts by Strategy).**
 
 ```text
@@ -95,7 +97,11 @@ Target Code:
 
 
 
+
+
 The three IR strategies share a common two-phase template: (1) build an intermediate description that abstracts the Python specifics, persist it under `artifacts/ir_*`, and (2) prompt the model to translate the method again while quoting that IR verbatim. The differences lie in what the IR looks like (reasoning, pseudocode, or prose), but the downstream handling—feeding both the original code and the intermediate file into the generator and saving results under `gen_java/task_0142/ir_*/function_requests_fetch_average_temperature.java`—remains consistent.
+
+![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/05f501167b9d513037a257f124900245.png)
 
 ### IR(CoT): chain-of-thought style IR
 
@@ -237,6 +243,12 @@ Please generate the {language} code that implements the following functionality:
 
 Please ensure the code is complete and correctly follows the syntax and conventions for {language}, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
+
+
+
+Both RA variants enrich the translation prompt with external evidence from StackOverflow: RA(method) builds a custom question from the entire method body, whereas RA(name) relies on structured signatures and method/class names. The two subsections below detail how each pipeline constructs its retrieval artifacts and how those artifacts feed back into generation.
+
+![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/b03913b72f2c16e8e3884794bcfe5b13.png)
 
 ### RA(method): retrieval-augmented with method-level StackOverflow answers
 
