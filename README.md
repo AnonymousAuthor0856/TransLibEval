@@ -189,7 +189,7 @@ All scripts live under `code/generate_strategies/<strategy_name>/` (one folder p
 
 ### 4.2 Test Suite Execution
 
-We provide language-specific automated test harnesses for Python (unittest),  Java (JUnit via Maven), and C++ (GoogleTest via CMake/CTest).  Each task includes exactly five test cases—normal input, edge input, exception handling, type validation, and resource-constraint—to enforce behavioral equivalence across languages.
+We provide automated test harnesses for Python (unittest),  Java (JUnit via Maven), and C++ (GoogleTest via CMake/CTest).  Each task includes exactly five test cases—normal input, edge input, exception handling, type validation, and resource-constraint—to enforce behavioral equivalence across languages.
 
 
 
