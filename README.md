@@ -347,7 +347,7 @@ example_translations = {
 
 #### 4.3.3. IR(summary)
 
-Stage A (IR extraction)
+*Stage A (IR extraction)*
 
 > Please analyze the following code and generate a summary of its functionality. 
 > The summary should not focus on specific language syntax, but should explain the key steps, 
@@ -370,7 +370,7 @@ Stage A (IR extraction)
 
 #### 4.3.4 IR(CoT)
 
-Stage A (IR extraction)
+*Stage A (IR extraction)*
 
 > Please read the following source code for the class '{class_name}' and provide a step-by-step chain of thought that describes the logical flow and algorithmic steps. 
 >
