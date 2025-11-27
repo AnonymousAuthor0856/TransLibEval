@@ -418,26 +418,35 @@ example_translations = {
 
 #### 4.3.6 RA(method)
 
-*Stage A.2(StackOverflow retrieval)*
 
-> Analyze the following code snippet written in {src}, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into {tgt}. The question should:\n
->         1. Be a simple sentence.\n
->                 2. Avoid including the original code snippet directly.\n
->                 3. Clearly describe the key functionality or purpose of the code that needs to be translated.\n
->                         4. Be enclosed in triple single quotes (''').\n\n
->                         Code snippet:\n`{src}\n{code}\n`
+
+*Stage A.1(search query generation)*
+
+> Analyze the following code snippet written in Python, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into Java. The question should:\n
+> 1. Be a simple sentence.\n
+> 2. Avoid including the original code snippet directly.\n
+> 3. Clearly describe the key functionality or purpose of the code that needs to be translated.\n
+> 4. Be enclosed in triple single quotes (''').\n\n
+>   Code snippet:
+>
 
 *Stage B (translation)*
 
->  ---- No related issues: direct translation ----
+>  You are a world‑class expert in code generation with deep mastery of translating algorithmic {src} class methods into {target} implementations.
 >
->  Using the following StackOverflow answers as reference, 
->       translate this {src} code into {tgt}:\n\n
+>  Below are the precise function signature details and either community‑sourced reference implementations or the original C++ code as fallback. Your task is to generate clean, idiomatic, and fully functional {target} code that exactly matches the behavior.\n\n
 >
->  ---- Related issues ----
+>  === Function Signature & Metadata ===\n
 >
->  Using the following StackOverflow answers as reference, 
->       translate this {src} code into {tgt}:\n\n
+>  {sig_json}\n\n
+>
+>  === Reference Implementation ===\n
+>
+>  {ref_impl}\n\n
+>
+>  Produce only the final {target} code. Do not include any explanations, comments, or extra text.\n\n
+>
+>  Begin {target} code now:\n
 
 
 
