@@ -547,7 +547,7 @@ public class FunctionRequestsFetchAverageTemperature {
 
 Both RA variants enrich the translation prompt with external evidence from StackOverflow: RA(method) builds a search query from the entire method body, whereas RA(name) relies on method names. The two subsections below detail how each pipeline constructs its retrieval references and how those references feed back into translation.
 
-<img src=https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/%E5%9B%BE%E7%89%871.png align="center" width=900 />
+<img src= https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/ra.png align="center" width=900 />
 
 
 
