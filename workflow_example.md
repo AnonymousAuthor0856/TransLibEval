@@ -203,7 +203,7 @@ artifacts/ir_cot/task_0142/steps.txt
 *Stage A (IR extraction)*
 
 ```text
-Please read the following source code for the class 'FunctionRequestsFetchAverageTemperature' and provide a step-by-step chain of thought that describes the logical flow and algorithmic steps. 
+Please read the following source code for the class 'FunctionRequestsFetchAverageTemperature' and provide a step-by-step chain of thought that describes the logical flow and steps. 
 
 Focus on the conceptual process rather than language-specific syntax. 
 Do not quote the exact source code.
