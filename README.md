@@ -434,7 +434,7 @@ example_translations = {
 
 >  You are a world‑class expert in code generation with deep mastery of translating algorithmic {src} class methods into {target} implementations.
 >
->  Below are the precise function signature details and either community‑sourced reference implementations or the original C++ code as fallback. Your task is to generate clean, idiomatic, and fully functional {target} code that exactly matches the behavior.\n\n
+>  Below are the precise function signature details and either community‑sourced reference implementations or the original {src} code as fallback. Your task is to generate clean, idiomatic, and fully functional {target} code that exactly matches the behavior.\n\n
 >
 >  === Function Signature & Metadata ===\n
 >
