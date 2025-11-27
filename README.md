@@ -1,8 +1,8 @@
 # TransLibEval: Demystify Large Language Models’ Capability in Third-party Library-targeted Code Translation
 
-TransLibEval is the first library-centric code translation benchmark presented in the paper " TransLibEval:  A Library-Centric Benchmark for Code Translation Across Python,  Java, and C++. "  Feel free to contact us for further information or to submit new results.
+TransLibEval is the first library-centric code translation benchmark presented in the paper " TransLibEval: Demystify Large Language Models’ Capability in Third-party Library-targeted Code Translation. " 
 
-For a step-by-step example that traces a single Python task through every translation strategy, build, test, and evaluation stage, see [`workflow_example.md`](./workflow_example.md).
+
 
 
 
@@ -14,17 +14,23 @@ Each task’s test suite contains five test cases—normal input, edge input, ex
 
 
 
-### 1.1 Parallel Triplet Illustration
+### 1.1 End-to-End Example: From Task to Evaluation
+
+For a step-by-step example that traces a single Python task through every translation strategy, build, test, and evaluation stage, see [`workflow_example.md`](./workflow_example.md).
+
+
+
+### 1.2 Parallel Triplet Illustration
 
 ![](https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/2.png)
 
-The figure above visualizes one minimal unit inside the parallel corpus: `function_request_get` shown in Python, C++, and Java. Each block contains distilled pseudo-code plus the corresponding third-party HTTP stack (`requests`, `libcurl`, `OkHttp + Jackson`). This snapshot demonstrates how every task in TransLibEval keeps the same control flow, timeout handling, JSON validation, and return semantics across the three languages, forming aligned triplets for training or evaluation.
+The figure above visualizes one minimal unit inside the parallel corpus: `function_request_get` shown in Python, C++, and Java. Each block contains distilled code plus the corresponding third-party HTTP stack (`requests`, `libcurl`, `OkHttp + Jackson`). This snapshot demonstrates how every task in TransLibEval keeps the same control flow, timeout handling, JSON validation, and return semantics across the three languages, forming aligned triplets for training or evaluation.
 
 
 
-### 1.2 Example Test Coverage
+### 1.3 Example of Test Cases 
 
-`example: test_pyfftw_interfaces_numpy_fft_ifft` illustrates the five-bucket template end to end. The file wires up an `IFFTProcessor`, probes diverse Fourier inputs, and verifies shape/exception semantics.
+`example: test_pyfftw_interfaces_numpy_fft_ifft` illustrates the five test cases end to end. The file wires up an `IFFTProcessor`, probes diverse Fourier inputs, and verifies shape/exception semantics.
 
 ```cpp
 class TestIFFTFunction(unittest.TestCase):
@@ -36,7 +42,7 @@ class TestIFFTFunction(unittest.TestCase):
     test_ifft_large_input():   assert "(1000,)" for a 1k-length complex vector
 ```
 
-| Test name                         | Scenario / input                                           | Taxonomy bucket        |
+| Test name                         | input                                           | Classification |
 |----------------------------------|-------------------------------------------------------------|------------------------|
 | `test_ifft_simple_input`         | Regular complex array succeeds                             | Nominal semantics      |
 | `test_ifft_zero_input`           | Zero-filled array exercises a boundary case                | Boundary adherence     |
@@ -194,7 +200,7 @@ All scripts live under `code/generate_strategies/<strategy_name>/` (one folder p
 
 
 
-### 4.2 Test Suite Execution
+### 4.2 Execute Test Suite 
 
 We provide automated test harnesses for Python (unittest),  Java (JUnit via Maven), and C++ (GoogleTest via CMake/CTest).  Each task includes exactly five test cases—normal input, edge input, exception handling, type validation, and resource-constraint—to enforce behavioral equivalence across languages.
 
