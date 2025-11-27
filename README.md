@@ -14,7 +14,7 @@ Each task’s test suite contains five test cases—normal input, edge input, ex
 
 
 
-### 1.1 End-to-End Example: From Task to Evaluation
+### 1.1 End-to-End Running Example
 
 For a step-by-step example that traces a single Python task through every translation strategy, build, test, and evaluation stage, see [`workflow_example.md`](./workflow_example.md).
 
