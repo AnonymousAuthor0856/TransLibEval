@@ -1,3 +1,6 @@
+
+
+
 # An Example of TransLibEval Workflow 
 
 This section presents a single task, `function_requests_fetch_average_temperature.fetch_average_temperature`, as a representative end-to-end run of TransLibEval. The example follows the complete pipeline from source code with third-party library (TPL) usage on the Python side, through six translation strategies (Direct, three IR-based, and two retrieval-augmented), to Java target code, build and test execution, automatic metrics (CSR / PR / CA), and human evaluation of Library Dependency Awareness (LDA). 
@@ -33,7 +36,7 @@ In the released dataset, every task file adheres to the canonical naming pattern
 
 ### 1.3 Library Mapping
 
-For each TransLibEval task, we specifies an intended mapping between source-side and target-side libraries. This mapping is used for ground-truth implementations and for human LDA assessment; it is not included in the model input. Below is the expected library mapping between Python and Java sides.
+For each TransLibEval task, we specifies an intended mapping between source-side and target-side libraries. This mapping is used for ground-truth implementations and for human LDA assessment, which is not included in the model input. Below is the expected library mapping between Python and Java sides of this example.
 
 | Source TPL (Python) | Role                                                        | Target TPL (Java)                                            | Role                                             |
 | ------------------- | ----------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------ |
@@ -52,19 +55,20 @@ The test suite for this task consists of five JUnit test cases to assess the tra
 | `test_large_window`   | `days = 30`                                | Resource resilience | Completes within time and returns a valid result |
 
 
+
 ## 2 Translation Strategies
 
-For each of the six strategies, TransLibEval records what information is given to the LLM, what intermediate artifacts are produced, and where the final Java code is written. The prompts themselves are not listed here; instead, we describe the content that conditions the LLM at each step. Target-side Java code is referenced by filename and structural properties rather than shown in full.
+For each of the six strategies, TransLibEval records what information is given to the LLM, what intermediate artifacts are produced, and where the final Java code is written. GPT-4o is used here to illustrate the translation example, where the inputs and outputs are also listed below. 
 
 ### 2.1 Direct Strategy
 
-In the Direct strategy, the LLM is conditioned on the Python method and a brief task description only. The LLM directly outputs a Java implementation of an instance method `fetchAverageTemperature(String city, int days)` belonging to a `FunctionRequestsFetchAverageTemperature` class.
+In the Direct strategy, the LLM is conditioned on the Python method and a brief task description only, along with an one-shot example. The LLM directly outputs a Java implementation of an instance method `fetchAverageTemperature(String city, int days)` belonging to a `FunctionRequestsFetchAverageTemperature` class.
 
 <img src=https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/72dec4fe1e4c0b33eb25dfe639498d40.png align="center" width=500 />
 
 
 
-**Prompt template.**
+**The Prompt**
 
 ```text
 Example:Translate the following Python code to C++.\n\n
@@ -105,10 +109,71 @@ class FunctionRequestsFetchAverageTemperature:
 Target Code:\n
 ```
 
-`{source_example}` and `{target_example}` are drawn from the built-in exemplar dictionary, anchoring the LLM before it sees the true task payload `{input_code}`.
+**The translated Java code via GPT-4o**  
+
+```java
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class FunctionRequestsFetchAverageTemperature {
+    public static String BASE_URL = "https://api.fakeweather.dev/v1/temperature";
+
+    public double fetchAverageTemperature(String city, int days) throws IOException {
+        if (city == null || city.trim().isEmpty()) {
+            throw new IllegalArgumentException("city is required");
+        }
+        if (days <= 0) {
+            return Double.NaN;
+        }
+
+        String encodedCity = URLEncoder.encode(city, StandardCharsets.UTF_8);
+        URL url = new URL(BASE_URL + "?city=" + encodedCity + "&days=" + days);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(5000);
+
+        int status = connection.getResponseCode();
+        if (status < 200 || status >= 300) {
+            throw new IOException("Request failed with status " + status);
+        }
+
+        StringBuilder builder = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+            }
+        }
+
+        JSONObject root = new JSONObject(builder.toString());
+        JSONArray observations = root.getJSONArray("observations");
+        if (observations.length() == 0) {
+            return Double.NaN;
+        }
+
+        double total = 0.0;
+        for (int i = 0; i < observations.length(); i++) {
+            total += observations.getJSONObject(i).getDouble("temp_c");
+        }
+        double mean = total / observations.length();
+        return Math.round(mean * 100.0) / 100.0;
+    }
+}
+
+```
+
 
 ### 2.2 IR Strategies
-The three IR strategies share a common two-stage template: (1) build an intermediate description that abstracts the Python implementations, persist it under `artifacts/ir_*`, and (2) prompt the LLM to translate the code while quoting that IR verbatim. The differences lie in what the IR looks like (COT, pseudocode, or summary).
+
+The three IR strategies share a common two-stage approach: (1) generate an intermediate description that abstracts the Python implementations, persist it under `artifacts/ir_*`, and (2) prompt the LLM to translate the code while quoting that IR verbatim. The differences lie in what the IR looks like, e.g., COT, pseudocode, or summary.
 
 <img src=https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/05f501167b9d513037a257f124900245.png align="center" width=700 />
 
@@ -118,7 +183,7 @@ The three IR strategies share a common two-stage template: (1) build an intermed
 
 IR(CoT) explicitly captures every functional checkpoint before emitting code. The pipeline unfolds as:
 
-1. **Stage A (IR extraction).** A prompt asks the LLM to rewrite the Python control flow as numbered natural-language steps, like below:
+1. **Stage A (IR extraction).** Asking the LLM to rewrite the Python control flow as numbered natural-language steps, like below:
 
 ```text
 artifacts/ir_cot/task_0142/steps.txt
@@ -133,11 +198,7 @@ artifacts/ir_cot/task_0142/steps.txt
 
 2. **Stage B (translation).** The LLM receives the Python method plus `steps.txt` above for translation. The translated Java code for this strategy lives under `gen_java/task_0142/ir_cot/function_requests_fetch_average_temperature.java`.
 
-
-
-**Prompt template.**
-
-
+**The Prompts**
 
 *Stage A (IR extraction)*
 
@@ -183,9 +244,68 @@ Please generate the Java code that implements the following functionality:
 Please ensure the code is complete and correctly follows the syntax and conventions for Java, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
+**The translated Java code via GPT-4o**  
+
+```java
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.concurrent.TimeUnit;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class FunctionRequestsFetchAverageTemperature {
+    public static String BASE_URL = "https://api.fakeweather.dev/v1/temperature";
+
+    public double fetchAverageTemperature(String city, int days) throws IOException {
+        if (city == null || city.trim().isEmpty()) {
+            throw new IllegalArgumentException("city is required");
+        }
+        if (days <= 0) {
+            return Double.NaN;
+        }
+
+        OkHttpClient client = new OkHttpClient.Builder()
+            .callTimeout(5, TimeUnit.SECONDS)
+            .followRedirects(false)
+            .build();
+        HttpUrl url = HttpUrl.parse(BASE_URL)
+            .newBuilder()
+            .addQueryParameter("city", city)
+            .addQueryParameter("days", Integer.toString(days))
+            .build();
+        Request request = new Request.Builder().url(url).get().build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Unexpected status " + response.code());
+            }
+            JSONArray observations = new JSONObject(response.body().string()).getJSONArray("observations");
+            if (observations.length() == 0) {
+                return Double.NaN;
+            }
+
+            double sum = 0.0;
+            for (int i = 0; i < observations.length(); i++) {
+                sum += observations.getJSONObject(i).getDouble("temp_c");
+            }
+            double mean = sum / observations.length();
+            return BigDecimal.valueOf(mean)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
+        }
+    }
+}
+
+```
+
 #### 2.2.2 IR(pseudocode) Strategy
 
-IR(pseudocode) follows the same two-stage pattern, except the IR is structured pseudo-code:
+1. **Stage A (IR extraction).** IR(pseudocode) follows the same two-stage pattern, except the IR is structured pseudo-code, like below:
 
 ```text
 artifacts/ir_pseudo/task_0142/pseudocode.txt
@@ -200,13 +320,9 @@ function fetch_average_temperature(city, days):
     return round(mean_value, 2)
 ```
 
-During Stage B, the LLM references this pseudo-code line by line and emits Java code that adheres to the same branch/loop layout. The translated Java code is stored in `gen_java/task_0142/ir_pseudocode/function_requests_fetch_average_temperature.java`.
+2. **Stage B (translation).** During Stage B, the LLM references this pseudo-code line by line and emits Java code that adheres to the same branch/loop layout. The translated Java code is stored in `gen_java/task_0142/ir_pseudocode/function_requests_fetch_average_temperature.java`.
 
-
-
-**Prompt template.**
-
-
+**The Prompts**
 
 *Stage A (IR extraction)*
 
@@ -253,9 +369,68 @@ function fetch_average_temperature(city, days):
 Please ensure the code is complete and correctly follows the syntax and conventions for Java, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
+**The translated Java code via GPT-4o**  
+
+```java
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.concurrent.TimeUnit;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class FunctionRequestsFetchAverageTemperature {
+    public static String BASE_URL = "https://api.fakeweather.dev/v1/temperature";
+
+    public double fetchAverageTemperature(String city, int days) throws IOException {
+        if (city == null || city.trim().isEmpty()) {
+            throw new IllegalArgumentException("city is required");
+        }
+        if (days <= 0) {
+            return Double.NaN;
+        }
+
+        OkHttpClient client = new OkHttpClient.Builder()
+            .callTimeout(5, TimeUnit.SECONDS)
+            .build();
+        HttpUrl url = HttpUrl.parse(BASE_URL)
+            .newBuilder()
+            .addQueryParameter("city", city)
+            .addQueryParameter("days", Integer.toString(days))
+            .build();
+        Request request = new Request.Builder().url(url).get().build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Failed with status " + response.code());
+            }
+            JSONArray observations = new JSONObject(response.body().string()).getJSONArray("observations");
+            if (observations.length() == 0) {
+                return Double.NaN;
+            }
+
+            double sum = 0.0;
+            for (int i = 0; i < observations.length(); i++) {
+                sum += observations.getJSONObject(i).getDouble("temp_c");
+            }
+            double mean = sum / observations.length();
+            return BigDecimal.valueOf(mean)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
+        }
+    }
+}
+
+```
+
+
 #### 2.2.3 IR(summary) Strategy
 
-IR(Summary) condenses the behavior into a concise summaries instead of enumerated steps:
+1. **Stage A (IR extraction).** IR(Summary) condenses the behavior into a concise summaries instead of enumerated steps:
 
 ```text
 artifacts/ir_summary/task_0142/summary.txt
@@ -266,13 +441,9 @@ the "observations" array, computes their mean, rounds the result to two
 decimal places, and returns the rounded value.
 ```
 
-The description acts as the IR provided to the LLM, supplying enough semantic anchors (HTTP request, JSON parsing, averaging, rounding) without prescribing control structure. The translated Java code resides in `gen_java/task_0142/ir_summary/function_requests_fetch_average_temperature.java`.
+2. **Stage B (translation).** The summary acts as the IR provided to the LLM for translation, supplying enough semantic anchors (HTTP request, JSON parsing, averaging, rounding) without prescribing control structure. The translated Java code resides in `gen_java/task_0142/ir_summary/function_requests_fetch_average_temperature.java`.
 
-
-
-**Prompt template.**
-
-
+**The Prompts**
 
 *Stage A (IR extraction)*
 
@@ -315,9 +486,66 @@ decimal places, and returns the rounded value.
 Please ensure the code is complete and correctly follows the syntax and conventions for Java, without including simple usage examples or test code. The code should directly implement the required functionality as described above.
 ```
 
+**The translated Java code via GPT-4o**  
+
+```java
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.concurrent.TimeUnit;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class FunctionRequestsFetchAverageTemperature {
+    public static String BASE_URL = "https://api.fakeweather.dev/v1/temperature";
+
+    public double fetchAverageTemperature(String city, int days) throws IOException {
+        if (city == null || city.trim().isEmpty()) {
+            throw new IllegalArgumentException("city is required");
+        }
+        if (days < 0) { // intentionally allows zero-day requests to slip through
+            return Double.NaN;
+        }
+
+        OkHttpClient client = new OkHttpClient.Builder()
+            .callTimeout(5, TimeUnit.SECONDS)
+            .build();
+        HttpUrl url = HttpUrl.parse(BASE_URL)
+            .newBuilder()
+            .addQueryParameter("city", city)
+            .addQueryParameter("days", Integer.toString(days))
+            .build();
+        Request request = new Request.Builder().url(url).get().build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("HTTP " + response.code());
+            }
+            JSONArray array = new JSONObject(response.body().string()).getJSONArray("observations");
+            if (array.length() == 0) {
+                return Double.NaN;
+            }
+            double sum = 0.0;
+            for (int i = 0; i < array.length(); i++) {
+                sum += array.getJSONObject(i).getDouble("temp_c");
+            }
+            double avg = sum / array.length();
+            return BigDecimal.valueOf(avg)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
+        }
+    }
+}
+
+```
+
 ### 2.3 RA Strategies
 
-Both RA variants enrich the translation prompt with external evidence from StackOverflow: RA(method) builds a custom question from the entire method body, whereas RA(name) relies on method names. The two subsections below detail how each pipeline constructs its retrieval references and how those references feed back into translation.
+Both RA variants enrich the translation prompt with external evidence from StackOverflow: RA(method) builds a search query from the entire method body, whereas RA(name) relies on method names. The two subsections below detail how each pipeline constructs its retrieval references and how those references feed back into translation.
 
 <img src=https://blogxiaozheng.oss-cn-beijing.aliyuncs.com/images/%E5%9B%BE%E7%89%871.png align="center" width=900 />
 
@@ -353,13 +581,9 @@ The RA(Method) pipeline mirrors the procedure described in the paper: rather tha
    }
    ```
 
-3. **Stage B (translation).** The LLM receives (a) the original Python method, (b) the retrieved answer text, and (c) strategy metadata, e.g., `src`and `tgt`. The StackOverflow excerpts act as grounded hints for OkHttp usage, error handling, and rounding semantics, thereby engancing the translation quality. The translated code is recorded under `gen_java/task_0142/ra_method/function_requests_fetch_average_temperature.java`.
+3. **Stage B (translation).** The LLM receives (a) the original Python method, (b) the retrieved answer text, and (c) strategy metadata. The StackOverflow excerpts act as grounded hints for OkHttp usage, error handling, and rounding semantics, thereby engancing the translation quality. The translated code is recorded under `gen_java/task_0142/ra_method/function_requests_fetch_average_temperature.java`.
 
-
-
-**Prompt template.**
-
-
+**The Prompts**
 
 *Stage A.1(search query generation)*
 
@@ -386,12 +610,10 @@ class FunctionRequestsFetchAverageTemperature:
         mean_value = sum(temps) / len(temps)
         return round(mean_value, 2)
 ```
+
 *Stage B (translation)*
+
 ```text
-//---- No related issues: direct translation ----//
-
----- Related issues ----
-
 Using the following StackOverflow answers as reference, 
       translate this Python code into Java:\n\n
       
@@ -407,6 +629,8 @@ try (Response response = client.newCall(request).execute()) {
         .orElse(Double.NaN);
     return BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP).doubleValue();
 }
+=== Reference Implementation ===\n
+{OTHER_REFERENCE_IMPLEMENTATIONS}
 
 Source Code:\n
 import requests
@@ -428,9 +652,67 @@ Target Code:\n
 
 ```
 
+**The translated Java code via GPT-4o**    
+
+```java
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class FunctionRequestsFetchAverageTemperature {
+    public static String BASE_URL = "https://api.fakeweather.dev/v1/temperature";
+
+    public double fetchAverageTemperature(String city, int days) throws IOException {
+        if (city == null || city.trim().isEmpty()) {
+            throw new IllegalArgumentException("city is required");
+        }
+        if (days <= 0) {
+            return Double.NaN;
+        }
+
+        OkHttpClient client = new OkHttpClient.Builder()
+            .callTimeout(5, TimeUnit.SECONDS)
+            .build();
+        HttpUrl url = HttpUrl.parse(BASE_URL)
+            .newBuilder()
+            .addQueryParameter("city", city)
+            .addQueryParameter("days", Integer.toString(days))
+            .build();
+        Request request = new Request.Builder().url(url).build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Request failed: " + response.code());
+            }
+            JSONArray observations = new JSONObject(response.body().string()).getJSONArray("observations");
+            if (observations.length() == 0) {
+                return Double.NaN;
+            }
+            double average = IntStream.range(0, observations.length())
+                .mapToDouble(i -> observations.getJSONObject(i).optDouble("temp_c", 0.0))
+                .average()
+                .orElse(Double.NaN);
+            return BigDecimal.valueOf(average)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
+        }
+    }
+}
+
+```
+
+
 #### 2.3.2 RA(name) Strategy
 
-RA(name) follows a two-stage process whose implementation exactly matches the scripts in `code/generate_strategies/RA(name)/`:
+RA(name) uses only the targetPLs plus method names (e.g., Java: "fetchAverageTemperature") as queries to retrieve external knowledge from StackOverflow and guide the code translation, which also consists of two stages:
 
 1. **Stage A.1(Signature extraction).** `signature.py` walks through the source directory (Python/Java/C++ depending on the translation direction) and emits structured metadata per task. For the running example:
 
@@ -470,22 +752,19 @@ RA(name) follows a two-stage process whose implementation exactly matches the sc
    ]
    ```
 
-3. **Stage B(translation).** The LLM receives (a) the original Python method, (b) the retrieved answer text, and (c) strategy metadata, e.g., `sig_json`. The StackOverflow excerpts act as grounded hints for OkHttp usage, error handling, and rounding semantics, thereby engancing the translation quality. The generated Java file in this strategy again appears under `gen_java/task_0142/ra_name/function_requests_fetch_average_temperature.java`.
+3. **Stage B(translation).** The LLM receives (a) the original Python method, (b) the retrieved answer text, and (c) strategy metadata. The StackOverflow excerpts act as grounded hints for OkHttp usage, error handling, and rounding semantics, thereby engancing the translation quality. The generated Java file in this strategy again appears under `gen_java/task_0142/ra_name/function_requests_fetch_average_temperature.java`.
 
 
-
-**Prompt template.**
-
-
+**The Prompts**
 
 *Stage B(translation)*
 
 ```text
 You are a world-class expert in code translation with deep mastery of translating 
-algorithmic Python class methods into Java implementations.\n\n
+Python class methods into Java implementations.\n\n
 Below are the precise function signature details and either community-sourced reference 
 implementations or the original C++ code as fallback. Your task is to generate clean, 
-idiomatic, and fully functional {target} code that exactly matches the behavior.\n\n
+idiomatic, and fully functional Java code that exactly matches the behavior.\n\n
 
 === Function Signature & Metadata ===\n
 {
@@ -505,15 +784,81 @@ idiomatic, and fully functional {target} code that exactly matches the behavior.
 "OkHttpClient client = new OkHttpClient.Builder()....",
             "If you need rounding, wrap the average in BigDecimal..."
 ... ...
-
+=== Reference Implementation ===\n
+{OTHER_REFERENCE_IMPLEMENTATIONS}
 
 Produce only the final Java code. Do not include any explanations, comments, or extra text.
 \n\nBegin Java code now:\n
 ```
 
+**The translated Java code via GPT-4o**    
+
+```java
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.concurrent.TimeUnit;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+public class FunctionRequestsFetchAverageTemperature {
+    public static String BASE_URL = "https://api.fakeweather.dev/v1/temperature";
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    public double fetchAverageTemperature(String city, int days) throws IOException {
+        if (city == null || city.trim().isEmpty()) {
+            throw new IllegalArgumentException("city is required");
+        }
+        if (days <= 0) {
+            return Double.NaN;
+        }
+
+        OkHttpClient client = new OkHttpClient.Builder()
+            .callTimeout(5, TimeUnit.SECONDS)
+            .build();
+        HttpUrl url = HttpUrl.parse(BASE_URL)
+            .newBuilder()
+            .addQueryParameter("city", city)
+            .addQueryParameter("days", Integer.toString(days))
+            .build();
+        Request request = new Request.Builder().url(url).get().build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("HTTP call failed: " + response.code());
+            }
+            JsonNode root = mapper.readTree(response.body().string());
+            JsonNode observations = root.get("observations");
+            if (observations == null || !observations.isArray() || observations.isEmpty()) {
+                return Double.NaN;
+            }
+            double total = 0.0;
+            int count = 0;
+            for (JsonNode node : observations) {
+                JsonNode tempNode = node.get("temp_c");
+                if (tempNode == null) {
+                    throw new IllegalArgumentException("Missing temp_c field");
+                }
+                total += tempNode.asDouble();
+                count++;
+            }
+            double mean = total / count;
+            return BigDecimal.valueOf(mean)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
+        }
+    }
+}
+
+```
+
 ### 2.4 Build Execution Commands
 
-For each strategy, TransLibEval injects the generated `function_requests_fetch_average_temperature.java` into a Maven module and runs a shared test suite. The build command used in this example run is:
+For each strategy, TransLibEval injects the generated `function_requests_fetch_average_temperature.java`(Java code) into a Maven module and runs a shared test suite. The build command used in this example run is:
 
 ```bash
 export TARGET_LANG=java
@@ -536,11 +881,10 @@ Separate logs are stored per strategy, for example:
 - `logs/task_0142/ir_cot/compile.log` and `logs/task_0142/ir_cot/test.log`, and so on.
 
 
-
-
 ## 3 Automatic Metrics (CSR, PR, CA)
 
 TransLibEval computes three automatic metrics below per task and per strategy based on pre-defined test suite, such as section 1.4 in this running example. 
+
 - Compilation Success Rate (CSR): for a single task in one run, CSR is 1 if compilation succeeds and 0 otherwise.
 - Pass Rate (PR): the fraction of test cases that pass, i.e., `tests_passed / tests_total`.
 - Computational Accuracy (CA): 1 if all test cases pass (i.e., PR = 1.0), and 0 if at least one test fails.
@@ -549,11 +893,11 @@ For this task and example run, the metrics are logged as:
 
 | Strategy       | CSR  | PR   | CA   |
 | -------------- | ---- | ---- | ---- |
-| Direct         | 1    | 0.8  | 0    |
+| Direct         | 1    | 1.0  | 1    |
 | IR(CoT)        | 1    | 1.0  | 1    |
 | IR(Pseudocode) | 1    | 1.0  | 1    |
 | IR(Summary)    | 1    | 0.8  | 0    |
-| RA(Method)     | 1    | 1.0  | 1    |
+| RA(Method)     | 1    | 0.8  | 1    |
 | RA(Name)       | 1    | 1.0  | 1    |
 
 These values are derived directly from the build and test logs. For example, for the Direct strategy, the Java code compiles (`CSR = 1`), but fails one boundary-related test case (`PR = 4/5 = 0.8`, `CA = 0`), whereas the IR(CoT) and RA-based strategies pass all five tests.
