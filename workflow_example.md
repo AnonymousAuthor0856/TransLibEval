@@ -732,10 +732,10 @@ RA(name) uses only the targetPLs plus method names (e.g., Java: "fetchAverageTem
    }
    ```
 
-2. **Stage A.2(StackOverflow retrieval).** `Search.py` iterates over the extracted signatures, issues queries of the form `"<target language>: <method name>"`, and stores the resulting StackOverflow question IDs and top answers inside `function_stackoverflow_answers/<target>_function_results/*.json`:
+2. **Stage A.2(StackOverflow retrieval).** `Search.py` iterates over the extracted signatures, issues queries of the form `"<target language>: <method name>"`, and stores the resulting StackOverflow question IDs and top answers inside `function_stackoverflow_answers/<target>_function_results/*.json`
 
    ```text
-   function_stackoverflow_answers/java_function_results/task_0142_results.json
+   function_stackoverflow_answers/java_function_results/function_requests_fetch_average_temperature_function_results
    [
        {
            "function": "fetchAverageTemperature",
@@ -897,7 +897,7 @@ For this task and example run, the metrics are logged as:
 | IR(CoT)        | 1    | 1.0  | 1    |
 | IR(Pseudocode) | 1    | 1.0  | 1    |
 | IR(Summary)    | 1    | 0.8  | 0    |
-| RA(Method)     | 1    | 0.8  | 1    |
+| RA(Method)     | 1    | 0.8  | 0    |
 | RA(Name)       | 1    | 1.0  | 1    |
 
 These values are derived directly from the build and test logs. For example, for the Direct strategy, the Java code compiles (`CSR = 1`), but fails one boundary-related test case (`PR = 4/5 = 0.8`, `CA = 0`), whereas the IR(CoT) and RA-based strategies pass all five tests.
