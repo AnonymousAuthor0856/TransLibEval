@@ -378,7 +378,7 @@ example_translations = {
 
 *Stage A (IR extraction)*
 
-> Please read the following source code for the class '{class_name}' and provide a step-by-step chain of thought that describes the logical flow and algorithmic steps. 
+> Please read the following source code for the class '{class_name}' and provide a step-by-step chain of thought that describes the logical flow and  steps. 
 >
 > Focus on the conceptual process rather than language-specific syntax. 
 > Do not quote the exact source code.
@@ -403,9 +403,9 @@ example_translations = {
 *Stage B (translation)*
 
 > You are a world‑class expert in code translation with deep mastery of translating 
-> algorithmic {from_lang} class methods into {target} implementations.\n\n
+>  {from_lang} class methods into {target} implementations.\n\n
 > Below are the precise function signature details and either community‑sourced reference 
-> implementations or the original C++ code as fallback. Your task is to generate clean, 
+> implementations or the original {src} code as fallback. Your task is to generate clean, 
 > idiomatic, and fully functional {target} code that exactly matches the behavior.\n\n
 > === Function Signature & Metadata ===\n
 > {sig_json}\n\n
@@ -422,7 +422,7 @@ example_translations = {
 
 *Stage A.1(search query generation)*
 
-> Analyze the following code snippet written in Python, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into Java. The question should:\n
+> Analyze the following code snippet written in {src}, and generate a single, concise, and well-formed question that summarizes the translation requirements of this code into {tgt}. The question should:\n
 > 1. Be a simple sentence.\n
 > 2. Avoid including the original code snippet directly.\n
 > 3. Clearly describe the key functionality or purpose of the code that needs to be translated.\n
@@ -432,7 +432,7 @@ example_translations = {
 
 *Stage B (translation)*
 
->  You are a world‑class expert in code generation with deep mastery of translating algorithmic {src} class methods into {target} implementations.
+>  You are a world‑class expert in code generation with deep mastery of translating  {src} class methods into {target} implementations.
 >
 >  Below are the precise function signature details and either community‑sourced reference implementations or the original {src} code as fallback. Your task is to generate clean, idiomatic, and fully functional {target} code that exactly matches the behavior.\n\n
 >
